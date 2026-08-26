@@ -52,6 +52,15 @@ class JadwalShift extends Model
             $areaNama = strtolower($pegawai->area_kerja ?? '');
             $fullNama = $divisiNama . ' ' . $areaNama;
 
+            if (str_contains($fullNama, 'satpam') || str_contains($fullNama, 'security')) {
+                return match ($tipe) {
+                    self::TIPE_PAGI  => ['jam_masuk' => '07:00', 'jam_pulang' => '14:00'],
+                    self::TIPE_SIANG => ['jam_masuk' => '14:00', 'jam_pulang' => '21:00'],
+                    self::TIPE_MALAM => ['jam_masuk' => '21:00', 'jam_pulang' => '07:00'],
+                    default          => ['jam_masuk' => null,    'jam_pulang' => null],
+                };
+            }
+
             if (str_contains($fullNama, 'cleaning') || str_contains($fullNama, 'cs')) {
                 return match ($tipe) {
                     self::TIPE_PAGI  => ['jam_masuk' => '06:30', 'jam_pulang' => '15:30'],

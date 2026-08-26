@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Divisi;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class DivisiSeeder extends Seeder
 {
@@ -14,7 +15,7 @@ class DivisiSeeder extends Seeder
     {
         $defaultDivisis = [
             [
-                'nama' => 'Staff Kantor (Regular)',
+                'nama' => 'Staff Kantor',
                 'jam_masuk' => '08:00:00',
                 'jam_pulang' => '17:00:00',
                 'toleransi_menit' => 15,
@@ -22,36 +23,20 @@ class DivisiSeeder extends Seeder
                 'keterangan' => 'Jam operasional staf kantor & administrasi (Senin - Jumat)',
             ],
             [
-                'nama' => 'Satpam - Shift Pagi',
+                'nama' => 'Satpam / Security',
                 'jam_masuk' => '07:00:00',
-                'jam_pulang' => '19:00:00',
+                'jam_pulang' => '14:00:00',
                 'toleransi_menit' => 0,
                 'hari_kerja_tipe' => '7_hari',
-                'keterangan' => 'Shift penjagaan keamanan pagi (Termasuk Weekend & Libur)',
+                'keterangan' => 'Shift 1: 07:00-14:00, Shift 2: 14:00-21:00, Shift 3: 21:00-07:00 (termasuk weekend)',
             ],
             [
-                'nama' => 'Satpam - Shift Malam',
-                'jam_masuk' => '19:00:00',
-                'jam_pulang' => '07:00:00',
-                'toleransi_menit' => 0,
-                'hari_kerja_tipe' => '7_hari',
-                'keterangan' => 'Shift penjagaan keamanan malam (Termasuk Weekend & Libur)',
-            ],
-            [
-                'nama' => 'Cleaning Service - Shift Pagi',
+                'nama' => 'Cleaning Service',
                 'jam_masuk' => '06:30:00',
                 'jam_pulang' => '15:30:00',
                 'toleransi_menit' => 10,
                 'hari_kerja_tipe' => '6_hari',
                 'keterangan' => 'Shift kebersihan pagi (Senin - Sabtu)',
-            ],
-            [
-                'nama' => 'Cleaning Service - Shift Siang',
-                'jam_masuk' => '12:00:00',
-                'jam_pulang' => '21:00:00',
-                'toleransi_menit' => 10,
-                'hari_kerja_tipe' => '6_hari',
-                'keterangan' => 'Shift kebersihan siang-malam (Senin - Sabtu)',
             ],
             [
                 'nama' => 'Operasional & IT',
@@ -68,6 +53,20 @@ class DivisiSeeder extends Seeder
                 ['nama' => $div['nama']],
                 $div
             );
+        }
+
+        $legacyNames = [
+            'Staff Kantor (Regular)',
+            'Satpam - Shift Pagi',
+            'Satpam - Shift Malam',
+            'Cleaning Service - Shift Pagi',
+            'Cleaning Service - Shift Siang',
+        ];
+
+        $legacyIds = Divisi::whereIn('nama', $legacyNames)->pluck('id');
+        if ($legacyIds->isNotEmpty()) {
+            DB::table('pegawais')->whereIn('divisi_id', $legacyIds)->update(['divisi_id' => null]);
+            Divisi::whereIn('id', $legacyIds)->delete();
         }
     }
 }
