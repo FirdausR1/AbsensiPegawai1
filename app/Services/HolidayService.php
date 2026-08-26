@@ -41,8 +41,13 @@ class HolidayService
 
     protected function nationalHolidayName(Carbon $date): ?string
     {
-        $holidays = $this->holidaysForYear($date->year);
-        return $holidays[$date->format('Y-m-d')] ?? null;
+        try {
+            $holidays = $this->holidaysForYear($date->year);
+            return $holidays[$date->format('Y-m-d')] ?? null;
+        } catch (\Throwable $e) {
+            Log::warning("Error in nationalHolidayName: " . $e->getMessage());
+            return null;
+        }
     }
 
     /**
@@ -52,26 +57,39 @@ class HolidayService
      */
     protected function holidaysForYear(int $year): array
     {
-        return Cache::remember("holidays_id_{$year}", now()->addDay(), function () use ($year) {
-            try {
-                $url = rtrim(config('services.holiday.api_url'), '/') . "/{$year}/" . config('services.holiday.country_code', 'ID');
-                $response = Http::timeout(5)->get($url);
+        try {
+            return Cache::remember("holidays_id_{$year}", now()->addDay(), function () use ($year) {
+                try {
+                    $apiUrl = config('services.holiday.api_url') ?: 'https://date.nager.at/api/v3/PublicHolidays';
+                    $countryCode = config('services.holiday.country_code') ?: 'ID';
+                    $url = rtrim((string) $apiUrl, '/') . "/{$year}/" . $countryCode;
+                    $response = Http::timeout(5)->get($url);
 
-                if (!$response->successful()) {
-                    Log::warning("Gagal ambil data libur nasional tahun {$year}: HTTP " . $response->status());
+                    if (!$response->successful()) {
+                        Log::warning("Gagal ambil data libur nasional tahun {$year}: HTTP " . $response->status());
+                        return [];
+                    }
+
+                    $json = $response->json();
+                    if (!is_array($json)) {
+                        return [];
+                    }
+
+                    $map = [];
+                    foreach ($json as $item) {
+                        if (is_array($item) && isset($item['date'])) {
+                            $map[$item['date']] = $item['localName'] ?? $item['name'] ?? 'Libur';
+                        }
+                    }
+                    return $map;
+                } catch (\Throwable $e) {
+                    Log::warning("Error ambil data libur nasional: {$e->getMessage()}");
                     return [];
                 }
-
-                $map = [];
-                foreach ($response->json() as $item) {
-                    // item: ['date' => '2026-01-01', 'localName' => 'Tahun Baru', ...]
-                    $map[$item['date']] = $item['localName'] ?? $item['name'];
-                }
-                return $map;
-            } catch (\Throwable $e) {
-                Log::warning("Error ambil data libur nasional: {$e->getMessage()}");
-                return [];
-            }
-        });
+            });
+        } catch (\Throwable $e) {
+            Log::warning("Cache error in holidaysForYear: " . $e->getMessage());
+            return [];
+        }
     }
 }

@@ -101,49 +101,60 @@ class AbsensiController extends Controller
 
     public function absenMasuk(Request $request)
     {
-        $pegawai = Auth::user();
-        $now = Carbon::now();
+        try {
+            $pegawai = Auth::user();
+            $now = Carbon::now();
 
-        if (!$pegawai->hasSignature()) {
-            return back()->with('error', 'Silakan buat tanda tangan digital dulu di halaman profil sebelum absen.');
+            if (!$pegawai->hasSignature()) {
+                return back()->with('error', 'Silakan buat tanda tangan digital dulu di halaman profil sebelum absen.');
+            }
+
+            if (!$this->holidayService->isWorkingDay($now)) {
+                $reason = $this->holidayService->reasonIfHoliday($now) ?? 'Hari Libur';
+                return back()->with('error', 'Hari ini libur (' . $reason . '), tidak perlu absen.');
+            }
+
+            $absensi = Absensi::firstOrCreate(
+                ['pegawai_id' => $pegawai->id, 'tanggal' => $now->toDateString()],
+            );
+
+            if ($absensi->jam_masuk) {
+                return back()->with('error', 'Kamu sudah absen masuk hari ini pukul ' . substr($absensi->jam_masuk, 0, 5) . ' WIB');
+            }
+
+            $absensi->update(['jam_masuk' => $now->format('H:i:s')]);
+
+            return back()->with('success', 'Absen masuk berhasil dicatat pukul ' . $now->format('H:i') . ' WIB!');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Error absenMasuk: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return back()->with('error', 'Gagal mencatat absen masuk: ' . $e->getMessage());
         }
-
-        if (!$this->holidayService->isWorkingDay($now)) {
-            return back()->with('error', 'Hari ini libur (' . $this->holidayService->reasonIfHoliday($now) . '), tidak perlu absen.');
-        }
-
-        $absensi = Absensi::firstOrCreate(
-            ['pegawai_id' => $pegawai->id, 'tanggal' => $now->toDateString()],
-        );
-
-        if ($absensi->jam_masuk) {
-            return back()->with('error', 'Kamu sudah absen masuk hari ini pukul ' . substr($absensi->jam_masuk, 0, 5) . ' WIB');
-        }
-
-        $absensi->update(['jam_masuk' => $now->format('H:i:s')]);
-
-        return back()->with('success', 'Absen masuk berhasil dicatat pukul ' . $now->format('H:i') . ' WIB!');
     }
 
     public function absenPulang(Request $request)
     {
-        $pegawai = Auth::user();
-        $now = Carbon::now();
+        try {
+            $pegawai = Auth::user();
+            $now = Carbon::now();
 
-        $absensi = Absensi::where('pegawai_id', $pegawai->id)
-            ->where('tanggal', $now->toDateString())
-            ->first();
+            $absensi = Absensi::where('pegawai_id', $pegawai->id)
+                ->where('tanggal', $now->toDateString())
+                ->first();
 
-        if (!$absensi || !$absensi->jam_masuk) {
-            return back()->with('error', 'Kamu belum melakukan absen masuk hari ini.');
+            if (!$absensi || !$absensi->jam_masuk) {
+                return back()->with('error', 'Kamu belum melakukan absen masuk hari ini.');
+            }
+
+            if ($absensi->jam_pulang) {
+                return back()->with('error', 'Kamu sudah absen pulang hari ini pukul ' . substr($absensi->jam_pulang, 0, 5) . ' WIB');
+            }
+
+            $absensi->update(['jam_pulang' => $now->format('H:i:s')]);
+
+            return back()->with('success', 'Absen pulang berhasil dicatat pukul ' . $now->format('H:i') . ' WIB!');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Error absenPulang: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return back()->with('error', 'Gagal mencatat absen pulang: ' . $e->getMessage());
         }
-
-        if ($absensi->jam_pulang) {
-            return back()->with('error', 'Kamu sudah absen pulang hari ini pukul ' . substr($absensi->jam_pulang, 0, 5) . ' WIB');
-        }
-
-        $absensi->update(['jam_pulang' => $now->format('H:i:s')]);
-
-        return back()->with('success', 'Absen pulang berhasil dicatat pukul ' . $now->format('H:i') . ' WIB!');
     }
 }
