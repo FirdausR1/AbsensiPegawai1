@@ -15,20 +15,40 @@ class PegawaiSeeder extends Seeder
     {
         $pegawais = [
             [
-                'nama'           => 'Administrator',
-                'email'          => 'admin@perusahaan.com',
-                'password'       => Hash::make('admin123'),
+                'nama'           => 'Administrator Utama',
+                'email'          => 'admin@isw.co.id',
+                'password'       => Hash::make('Admin@ISW2024'),
                 'area_kerja'     => 'Management / HR',
                 'sheet_tab_name' => 'Admin',
                 'is_admin'       => true,
+                'role'           => 'super_admin',
             ],
             [
                 'nama'           => 'Firdaus Romandhanu',
+                'email'          => 'firdaus@isw.co.id',
+                'password'       => Hash::make('password123'),
+                'area_kerja'     => 'Management / HR',
+                'sheet_tab_name' => 'Firdaus Romandhanu',
+                'is_admin'       => true,
+                'role'           => 'super_admin',
+            ],
+            [
+                'nama'           => 'Firdaus Romandhanu (Ops)',
                 'email'          => 'firdaus@perusahaan.com',
                 'password'       => Hash::make('password123'),
                 'area_kerja'     => 'Operasional',
                 'sheet_tab_name' => 'Firdaus Romandhanu',
                 'is_admin'       => true,
+                'role'           => 'super_admin',
+            ],
+            [
+                'nama'           => 'Danru Satpam',
+                'email'          => 'danru.satpam@isw.co.id',
+                'password'       => Hash::make('password123'),
+                'area_kerja'     => 'Satpam / Security',
+                'sheet_tab_name' => 'Danru Satpam',
+                'is_admin'       => true,
+                'role'           => 'admin_divisi',
             ],
             [
                 'nama'           => 'Isnan Anugroho',
@@ -37,6 +57,7 @@ class PegawaiSeeder extends Seeder
                 'area_kerja'     => 'Operasional',
                 'sheet_tab_name' => 'Isnan Anugroho',
                 'is_admin'       => false,
+                'role'           => 'staff',
             ],
             [
                 'nama'           => 'Wahyu Ari Nugroho',
@@ -45,6 +66,7 @@ class PegawaiSeeder extends Seeder
                 'area_kerja'     => 'Operasional',
                 'sheet_tab_name' => 'Wahyu Ari Nugroho',
                 'is_admin'       => false,
+                'role'           => 'staff',
             ],
             [
                 'nama'           => 'Mohamad Adjwadi',
@@ -53,6 +75,7 @@ class PegawaiSeeder extends Seeder
                 'area_kerja'     => 'Operasional',
                 'sheet_tab_name' => 'Mohamad Adjwadi',
                 'is_admin'       => false,
+                'role'           => 'staff',
             ],
             [
                 'nama'           => 'Primandhika',
@@ -61,6 +84,7 @@ class PegawaiSeeder extends Seeder
                 'area_kerja'     => 'Operasional',
                 'sheet_tab_name' => 'Primandhika',
                 'is_admin'       => false,
+                'role'           => 'staff',
             ],
         ];
 
