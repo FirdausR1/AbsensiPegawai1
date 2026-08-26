@@ -42,6 +42,14 @@ class AdminJadwalShiftController extends Controller
 
         $pegawais = $pegawaiQuery->get();
 
+        // Grouping pegawai berdasarkan Divisi / Department / Area Kerja
+        $pegawaisGrouped = $pegawais->groupBy(function ($p) {
+            if ($p->divisi) {
+                return $p->divisi->nama;
+            }
+            return $p->area_kerja ?: 'Staff / General';
+        });
+
         // Ambil semua jadwal bulan ini untuk pegawai-pegawai tersebut
         $pegawaiIds = $pegawais->pluck('id');
         $jadwals = JadwalShift::whereIn('pegawai_id', $pegawaiIds)
@@ -54,6 +62,8 @@ class AdminJadwalShiftController extends Controller
                 return $j->pegawai_id . '_' . $j->tanggal->format('Y-m-d');
             });
 
+        $divisis = Divisi::all();
+
         $areas = Pegawai::whereNotNull('area_kerja')
             ->distinct()
             ->pluck('area_kerja')
@@ -62,7 +72,7 @@ class AdminJadwalShiftController extends Controller
             ->values();
 
         return view('admin.jadwal-shift.index', compact(
-            'pegawais', 'jadwals', 'carbonBulan', 'bulan', 'areas', 'currentUser'
+            'pegawais', 'pegawaisGrouped', 'jadwals', 'carbonBulan', 'bulan', 'areas', 'divisis', 'currentUser'
         ));
     }
 

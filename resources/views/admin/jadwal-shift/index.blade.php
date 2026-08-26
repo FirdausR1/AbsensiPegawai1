@@ -3,7 +3,7 @@
 @section('title', 'Jadwal Shift Pegawai - PT Inti Sarana Wijaya')
 
 @section('content')
-<div class="space-y-5">
+<div class="space-y-6">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -12,8 +12,8 @@
                 <span>/</span>
                 <span class="text-slate-800 font-bold">Jadwal Shift</span>
             </div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-[#000d6b] tracking-tight">Kelola Jadwal Shift</h1>
-            <p class="text-xs text-slate-500 mt-1">Atur jadwal shift Satpam & Cleaning Service. Klik sel kalender untuk assign shift.</p>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-[#000d6b] tracking-tight">Kelola Jadwal Shift Per Divisi</h1>
+            <p class="text-xs text-slate-500 mt-1">Atur jadwal shift sesuai divisi/departemen (Satpam, Cleaning Service, Operasional, Staff). Klik sel kalender untuk set shift.</p>
         </div>
 
         <!-- Month Nav -->
@@ -22,12 +22,12 @@
                 $prevBulan = $carbonBulan->copy()->subMonth()->format('Y-m');
                 $nextBulan = $carbonBulan->copy()->addMonth()->format('Y-m');
             @endphp
-            <a href="{{ route('admin.jadwal-shift.index', ['bulan' => $prevBulan, 'area' => request('area')]) }}"
+            <a href="{{ route('admin.jadwal-shift.index', ['bulan' => $prevBulan, 'area' => request('area'), 'divisi_id' => request('divisi_id')]) }}"
                class="px-3 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 text-xs font-bold shadow-sm">← Prev</a>
             <div class="px-4 py-2 bg-[#000d6b] text-white rounded-lg text-xs font-bold min-w-[110px] text-center shadow">
                 {{ $carbonBulan->translatedFormat('F Y') }}
             </div>
-            <a href="{{ route('admin.jadwal-shift.index', ['bulan' => $nextBulan, 'area' => request('area')]) }}"
+            <a href="{{ route('admin.jadwal-shift.index', ['bulan' => $nextBulan, 'area' => request('area'), 'divisi_id' => request('divisi_id')]) }}"
                class="px-3 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 text-xs font-bold shadow-sm">Next →</a>
         </div>
     </div>
@@ -36,24 +36,27 @@
     <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-wrap items-center justify-between gap-4">
         <!-- Legend -->
         <div class="flex flex-wrap items-center gap-3">
-            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Shift:</span>
-            <span class="px-2.5 py-1 rounded text-[10px] font-bold border bg-amber-100 text-amber-800 border-amber-200">☀️ Pagi</span>
-            <span class="px-2.5 py-1 rounded text-[10px] font-bold border bg-indigo-100 text-indigo-800 border-indigo-200">🌙 Malam</span>
-            <span class="px-2.5 py-1 rounded text-[10px] font-bold border bg-sky-100 text-sky-800 border-sky-200">🌤️ Siang</span>
+            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tipe Shift:</span>
+            <span class="px-2.5 py-1 rounded text-[10px] font-bold border bg-amber-100 text-amber-800 border-amber-200">☀️ Pagi (07:00-19:00)</span>
+            <span class="px-2.5 py-1 rounded text-[10px] font-bold border bg-indigo-100 text-indigo-800 border-indigo-200">🌙 Malam (19:00-07:00)</span>
+            <span class="px-2.5 py-1 rounded text-[10px] font-bold border bg-sky-100 text-sky-800 border-sky-200">🌤️ Siang (12:00-21:00)</span>
             <span class="px-2.5 py-1 rounded text-[10px] font-bold border bg-slate-100 text-slate-500 border-slate-200">🏠 Libur</span>
             <span class="px-2.5 py-1 rounded text-[10px] font-bold border bg-white text-slate-300 border-dashed border-slate-300">Belum Dijadwalkan</span>
         </div>
 
-        <!-- Filter Area -->
-        <form method="GET" action="{{ route('admin.jadwal-shift.index') }}" class="flex gap-2">
+        <!-- Filter Divisi / Department / Area -->
+        <form method="GET" action="{{ route('admin.jadwal-shift.index') }}" class="flex flex-wrap items-center gap-2">
             <input type="hidden" name="bulan" value="{{ $bulan }}">
             <select name="area" class="px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-xs bg-white">
-                <option value="">Semua Area Kerja</option>
+                <option value="">Semua Divisi / Area</option>
                 @foreach($areas as $area)
                     <option value="{{ $area }}" {{ request('area') === $area ? 'selected' : '' }}>{{ $area }}</option>
                 @endforeach
             </select>
-            <button type="submit" class="px-3 py-2 bg-[#000d6b] text-white text-xs font-bold rounded-lg">Filter</button>
+            <button type="submit" class="px-3.5 py-2 bg-[#000d6b] text-white text-xs font-bold rounded-lg shadow-sm">Filter</button>
+            @if(request('area'))
+                <a href="{{ route('admin.jadwal-shift.index', ['bulan' => $bulan]) }}" class="px-3 py-2 bg-slate-100 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-200">Reset</a>
+            @endif
         </form>
     </div>
 
@@ -61,16 +64,20 @@
     <div class="bg-gradient-to-r from-[#eef2ff] to-white rounded-xl border border-indigo-100 p-5 shadow-sm">
         <div class="flex items-center gap-2 mb-4">
             <span class="section-bar"></span>
-            <h3 class="text-sm font-bold text-slate-900">Input Jadwal Massal (Mingguan / Bulanan)</h3>
+            <h3 class="text-sm font-bold text-slate-900">Input Jadwal Massal Per Pegawai (Mingguan / Bulanan)</h3>
         </div>
         <form method="POST" action="{{ route('admin.jadwal-shift.bulk') }}" class="grid grid-cols-1 sm:grid-cols-12 gap-3 text-xs">
             @csrf
             <div class="sm:col-span-3">
-                <label class="block font-semibold text-slate-700 mb-1">Pilih Pegawai</label>
+                <label class="block font-semibold text-slate-700 mb-1">Pilih Pegawai & Divisi</label>
                 <select name="pegawai_id" required class="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-xs bg-white">
                     <option value="">-- Pilih Pegawai --</option>
-                    @foreach($pegawais as $p)
-                        <option value="{{ $p->id }}">{{ $p->nama }} ({{ $p->area_kerja }})</option>
+                    @foreach($pegawaisGrouped as $groupName => $groupMembers)
+                        <optgroup label="Divisi / Area: {{ $groupName }}">
+                            @foreach($groupMembers as $p)
+                                <option value="{{ $p->id }}">{{ $p->nama }} ({{ $p->area_kerja ?: 'Staff' }})</option>
+                            @endforeach
+                        </optgroup>
                     @endforeach
                 </select>
             </div>
@@ -121,98 +128,132 @@
         </div>
     @endif
 
-    <!-- Per-Pegawai Calendar Grid -->
-    @forelse($pegawais as $pegawai)
-        @php
-            $daysInMonth = $carbonBulan->daysInMonth;
-            $pegawaiJadwals = $jadwals->filter(fn($v, $k) => str_starts_with($k, $pegawai->id . '_'));
-        @endphp
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <!-- Pegawai Header -->
-            <div class="flex items-center justify-between px-5 py-3.5 bg-slate-50 border-b border-slate-200">
+    <!-- Render Calendar Grid Grouped by Division / Department -->
+    @forelse($pegawaisGrouped as $groupName => $members)
+        <div class="space-y-3">
+            <!-- Division Header Banner -->
+            <div class="flex items-center justify-between bg-[#000d6b] text-white px-5 py-3.5 rounded-xl shadow-sm">
                 <div class="flex items-center gap-3">
-                    @php
-                        $words = explode(' ', trim($pegawai->nama));
-                        $initials = count($words) >= 2
-                            ? strtoupper(substr($words[0],0,1).substr($words[1],0,1))
-                            : strtoupper(substr($pegawai->nama,0,2));
-                    @endphp
-                    <div class="w-8 h-8 rounded-full bg-[#e2e8f0] text-[#1e3a8a] font-bold flex items-center justify-center text-xs border border-slate-300/60">
-                        {{ $initials }}
+                    <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-base">
+                        @if(stripos($groupName, 'satpam') !== false || stripos($groupName, 'security') !== false) 🛡️
+                        @elseif(stripos($groupName, 'cleaning') !== false || stripos($groupName, 'cs') !== false) 🧹
+                        @elseif(stripos($groupName, 'operasional') !== false || stripos($groupName, 'it') !== false) ⚙️
+                        @else 🏢
+                        @endif
                     </div>
                     <div>
-                        <div class="text-xs font-bold text-slate-900">{{ $pegawai->nama }}</div>
-                        <div class="text-[11px] text-slate-400">{{ $pegawai->area_kerja }}</div>
+                        <h2 class="text-sm font-extrabold tracking-wide uppercase">DIVISI / AREA: {{ $groupName }}</h2>
+                        <p class="text-[11px] text-indigo-200 font-normal">{{ $members->count() }} Anggota Pegawai Dijadwalkan</p>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    @php
-                        $totalHadir = $pegawaiJadwals->where('tipe_shift','!=','Libur')->count();
-                        $totalLibur = $pegawaiJadwals->where('tipe_shift','Libur')->count();
-                    @endphp
-                    <span class="text-[11px] text-slate-500">Shift: <strong class="text-slate-800">{{ $totalHadir }}</strong></span>
-                    <span class="text-[11px] text-slate-500">Libur: <strong class="text-slate-800">{{ $totalLibur }}</strong></span>
-                </div>
+                <span class="text-xs bg-white/20 px-3 py-1 rounded-full font-bold">
+                    {{ $carbonBulan->translatedFormat('F Y') }}
+                </span>
             </div>
 
-            <!-- Calendar Strip -->
-            <div class="overflow-x-auto p-4">
-                <div class="flex gap-1.5 min-w-max">
-                    @for($day = 1; $day <= $daysInMonth; $day++)
-                        @php
-                            $date = $carbonBulan->copy()->day($day);
-                            $key  = $pegawai->id . '_' . $date->format('Y-m-d');
-                            $jadwal = $jadwals->get($key);
-                            $isWeekend = $date->isWeekend();
-                            $isToday = $date->isToday();
-                        @endphp
-                        <div class="flex flex-col items-center group cursor-pointer"
-                             onclick="openAssignModal({{ $pegawai->id }}, '{{ $pegawai->nama }}', '{{ $date->toDateString() }}', '{{ $jadwal?->tipe_shift ?? '' }}')"
-                             title="{{ $date->translatedFormat('l, d M') }}{{ $jadwal ? ' — ' . $jadwal->getShiftLabel() : ' — Belum dijadwalkan' }}">
-
-                            <!-- Day header -->
-                            <div class="text-[10px] font-bold {{ $isWeekend ? 'text-rose-400' : 'text-slate-400' }} mb-1">
-                                {{ $date->format('D')[0] }}
+            <!-- Pegawai Rows inside this Division -->
+            <div class="space-y-3">
+                @foreach($members as $pegawai)
+                    @php
+                        $daysInMonth = $carbonBulan->daysInMonth;
+                        $pegawaiJadwals = $jadwals->filter(fn($v, $k) => str_starts_with($k, $pegawai->id . '_'));
+                    @endphp
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <!-- Pegawai Sub-Header -->
+                        <div class="flex items-center justify-between px-5 py-3 bg-slate-50 border-b border-slate-200">
+                            <div class="flex items-center gap-3">
+                                @php
+                                    $words = explode(' ', trim($pegawai->nama));
+                                    $initials = count($words) >= 2
+                                        ? strtoupper(substr($words[0],0,1).substr($words[1],0,1))
+                                        : strtoupper(substr($pegawai->nama,0,2));
+                                @endphp
+                                <div class="w-8 h-8 rounded-full bg-[#e2e8f0] text-[#1e3a8a] font-bold flex items-center justify-center text-xs border border-slate-300/60">
+                                    {{ $initials }}
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-slate-900">{{ $pegawai->nama }}</div>
+                                    <div class="text-[11px] text-slate-400 font-medium">
+                                        {{ $pegawai->area_kerja ?: ($pegawai->divisi?->nama ?? 'Staff') }}
+                                        @if($pegawai->role && $pegawai->role !== 'staff')
+                                            <span class="ml-1 text-[10px] px-1.5 py-0.5 bg-indigo-100 text-indigo-700 font-bold rounded">
+                                                {{ strtoupper($pegawai->role) }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
                             </div>
-                            <div class="text-[11px] font-extrabold {{ $isToday ? 'text-[#000d6b]' : ($isWeekend ? 'text-rose-500' : 'text-slate-700') }} mb-1">
-                                {{ $day }}
+                            <div class="flex items-center gap-3">
+                                @php
+                                    $totalHadir = $pegawaiJadwals->where('tipe_shift','!=','Libur')->count();
+                                    $totalLibur = $pegawaiJadwals->where('tipe_shift','Libur')->count();
+                                @endphp
+                                <span class="text-[11px] text-slate-500">Shift Kerja: <strong class="text-emerald-700 font-bold">{{ $totalHadir }} Hari</strong></span>
+                                <span class="text-[11px] text-slate-500">Libur: <strong class="text-slate-700 font-bold">{{ $totalLibur }} Hari</strong></span>
                             </div>
-
-                            <!-- Shift Cell -->
-                            <div class="w-10 h-10 rounded-lg border flex items-center justify-center text-sm transition-transform group-hover:scale-110 group-hover:shadow-md
-                                {{ $isToday ? 'ring-2 ring-[#000d6b] ring-offset-1' : '' }}
-                                @if($jadwal)
-                                    @if($jadwal->tipe_shift === 'Pagi') bg-amber-100 border-amber-300
-                                    @elseif($jadwal->tipe_shift === 'Malam') bg-indigo-100 border-indigo-300
-                                    @elseif($jadwal->tipe_shift === 'Siang') bg-sky-100 border-sky-300
-                                    @elseif($jadwal->tipe_shift === 'Libur') bg-slate-100 border-slate-200
-                                    @else bg-white border-slate-200
-                                    @endif
-                                    {{ $jadwal->status === 'requested' ? 'ring-2 ring-amber-400' : '' }}
-                                @else bg-white border-dashed border-slate-200 @endif">
-                                @if($jadwal)
-                                    @if($jadwal->tipe_shift === 'Pagi') ☀️
-                                    @elseif($jadwal->tipe_shift === 'Malam') 🌙
-                                    @elseif($jadwal->tipe_shift === 'Siang') 🌤️
-                                    @elseif($jadwal->tipe_shift === 'Libur') 🏠
-                                    @endif
-                                @endif
-                            </div>
-
-                            <!-- Status dot for requested -->
-                            @if($jadwal && $jadwal->status === 'requested')
-                                <div class="w-1.5 h-1.5 rounded-full bg-amber-500 mt-0.5" title="Menunggu konfirmasi"></div>
-                            @else
-                                <div class="w-1.5 h-1.5 mt-0.5"></div>
-                            @endif
                         </div>
-                    @endfor
-                </div>
+
+                        <!-- Calendar Strip for Employee -->
+                        <div class="overflow-x-auto p-4">
+                            <div class="flex gap-1.5 min-w-max">
+                                @for($day = 1; $day <= $daysInMonth; $day++)
+                                    @php
+                                        $date = $carbonBulan->copy()->day($day);
+                                        $key  = $pegawai->id . '_' . $date->format('Y-m-d');
+                                        $jadwal = $jadwals->get($key);
+                                        $isWeekend = $date->isWeekend();
+                                        $isToday = $date->isToday();
+                                    @endphp
+                                    <div class="flex flex-col items-center group cursor-pointer"
+                                         onclick="openAssignModal({{ $pegawai->id }}, '{{ addslashes($pegawai->nama) }}', '{{ $date->toDateString() }}', '{{ $jadwal?->tipe_shift ?? '' }}')"
+                                         title="{{ $date->translatedFormat('l, d M Y') }}{{ $jadwal ? ' — ' . $jadwal->getShiftLabel() : ' — Klik untuk atur shift' }}">
+
+                                        <!-- Day header -->
+                                        <div class="text-[10px] font-bold {{ $isWeekend ? 'text-rose-400' : 'text-slate-400' }} mb-1">
+                                            {{ $date->format('D')[0] }}
+                                        </div>
+                                        <div class="text-[11px] font-extrabold {{ $isToday ? 'text-[#000d6b]' : ($isWeekend ? 'text-rose-500' : 'text-slate-700') }} mb-1">
+                                            {{ $day }}
+                                        </div>
+
+                                        <!-- Shift Cell -->
+                                        <div class="w-10 h-10 rounded-lg border flex items-center justify-center text-sm transition-transform group-hover:scale-110 group-hover:shadow-md
+                                            {{ $isToday ? 'ring-2 ring-[#000d6b] ring-offset-1' : '' }}
+                                            @if($jadwal)
+                                                @if($jadwal->tipe_shift === 'Pagi') bg-amber-100 border-amber-300
+                                                @elseif($jadwal->tipe_shift === 'Malam') bg-indigo-100 border-indigo-300
+                                                @elseif($jadwal->tipe_shift === 'Siang') bg-sky-100 border-sky-300
+                                                @elseif($jadwal->tipe_shift === 'Libur') bg-slate-100 border-slate-200
+                                                @else bg-white border-slate-200
+                                                @endif
+                                                {{ $jadwal->status === 'requested' ? 'ring-2 ring-amber-400' : '' }}
+                                            @else bg-white border-dashed border-slate-200 @endif">
+                                            @if($jadwal)
+                                                @if($jadwal->tipe_shift === 'Pagi') ☀️
+                                                @elseif($jadwal->tipe_shift === 'Malam') 🌙
+                                                @elseif($jadwal->tipe_shift === 'Siang') 🌤️
+                                                @elseif($jadwal->tipe_shift === 'Libur') 🏠
+                                                @endif
+                                            @endif
+                                        </div>
+
+                                        <!-- Status dot for requested -->
+                                        @if($jadwal && $jadwal->status === 'requested')
+                                            <div class="w-1.5 h-1.5 rounded-full bg-amber-500 mt-0.5" title="Menunggu konfirmasi"></div>
+                                        @else
+                                            <div class="w-1.5 h-1.5 mt-0.5"></div>
+                                        @endif
+                                    </div>
+                                @endfor
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
             </div>
         </div>
     @empty
         <div class="text-center py-16 text-slate-400 text-sm bg-white rounded-xl border border-slate-200">
-            Belum ada pegawai yang dapat dikelola jadwalnya.
+            Belum ada data pegawai pada divisi/area ini.
         </div>
     @endforelse
 </div>
@@ -250,14 +291,14 @@
 
             <div>
                 <label class="block font-semibold text-slate-700 mb-1">Catatan (opsional)</label>
-                <input type="text" name="catatan" placeholder="Misal: Ganti jadwal karena..."
+                <input type="text" name="catatan" placeholder="Misal: Ganti shift..."
                        class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-xs">
             </div>
 
             <div class="pt-3 flex justify-between gap-2 border-t border-slate-100">
                 <button type="button" id="btn-hapus-jadwal" onclick="hapusJadwal()"
                         class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold rounded-lg text-xs transition">
-                    Hapus Jadwal
+                    Hapus Shift
                 </button>
                 <button type="submit" class="px-5 py-2 bg-[#000d6b] hover:bg-[#001253] text-white font-bold rounded-lg shadow-sm text-xs">
                     Simpan
@@ -279,7 +320,6 @@
         document.getElementById('modal-tanggal').value = tanggal;
         document.getElementById('modal-sub').innerText = nama + ' — ' + tanggal;
 
-        // Reset & select existing
         document.querySelectorAll('.shift-option').forEach(opt => {
             opt.classList.remove('border-[#000d6b]', 'bg-indigo-50');
             opt.classList.add('border-slate-200');
@@ -308,7 +348,6 @@
         }).then(() => location.reload());
     }
 
-    // Shift option click visual feedback
     document.querySelectorAll('.shift-option').forEach(opt => {
         opt.addEventListener('click', () => {
             document.querySelectorAll('.shift-option').forEach(o => {
@@ -321,7 +360,6 @@
         });
     });
 
-    // Ajax form submit for individual assign
     document.getElementById('assign-form').addEventListener('submit', function(e) {
         e.preventDefault();
         const formData = new FormData(this);
