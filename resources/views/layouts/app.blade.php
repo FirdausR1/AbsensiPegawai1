@@ -127,11 +127,11 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                 </svg>
                 <span>Export Excel</span>
-            </a>
-
-            @if(auth()->check() && auth()->user()->is_admin)
+            </a>            @if(auth()->check() && auth()->user()->hasAdminAccess())
                 <div class="pt-4 pb-1">
-                    <div class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Admin Panel</div>
+                    <div class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        {{ auth()->user()->isSuperAdmin() ? 'Admin Panel' : 'Koordinator Divisi' }}
+                    </div>
                 </div>
 
                 <a href="{{ route('admin.pegawai.index') }}"
@@ -175,7 +175,7 @@
                 @csrf
                 <button type="submit" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs text-rose-600 hover:bg-rose-50 transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                     </svg>
                     <span>Logout</span>
                 </button>
@@ -227,7 +227,7 @@
                                 {{ auth()->user()->nama }}
                             </div>
                             <div class="text-[10px] text-slate-400 font-medium">
-                                {{ auth()->user()->is_admin ? 'Administrator' : (auth()->user()->area_kerja ?: 'Employee') }}
+                                {{ auth()->user()->getRoleBadgeText() }}
                             </div>
                         </div>
                     </a>
@@ -240,10 +240,17 @@
             <a href="{{ route('dashboard') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('dashboard') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-700' }}">Dashboard</a>
             <a href="{{ route('absen.riwayat') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('absen.riwayat') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-700' }}">History</a>
             <a href="{{ route('profile.edit') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('profile.edit') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-700' }}">Profile</a>
-            <a href="{{ route('profile.signature') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('profile.signature') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-700' }}">Signature</a>
-            @if(auth()->check() && auth()->user()->is_admin)
-                <a href="{{ route('admin.pegawai.index') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold text-[#000d6b]">Manage Employees</a>
-                <a href="{{ route('admin.absensi.index') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold text-[#000d6b]">All Attendance</a>
+            <a href="{{ route('profile.signature') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('profile.signature') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-700' }}">Digital Signature</a>
+            <a href="{{ route('export.sendiri') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold text-slate-700">Export Excel</a>
+            @if(auth()->check() && auth()->user()->hasAdminAccess())
+                <div class="pt-2 pb-1 border-t border-slate-100">
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3">
+                        {{ auth()->user()->isSuperAdmin() ? 'Admin Panel' : 'Koordinator Divisi' }}
+                    </div>
+                </div>
+                <a href="{{ route('admin.pegawai.index') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('admin.pegawai.*') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-700' }}">Manage Employees</a>
+                <a href="{{ route('admin.absensi.index') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('admin.absensi.*') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-700' }}">All Attendance</a>
+                <a href="{{ route('admin.divisi.index') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('admin.divisi.*') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-700' }}">Shift & Waktu Kerja</a>
             @endif
             <form method="POST" action="{{ route('logout') }}" class="pt-2 border-t">
                 @csrf

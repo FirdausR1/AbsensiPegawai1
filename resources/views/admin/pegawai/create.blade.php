@@ -84,14 +84,27 @@
                        placeholder="Min. 8 characters">
             </div>
 
-            <div class="pt-2">
-                <label class="flex items-center text-xs text-slate-700 cursor-pointer">
-                    <input type="checkbox" name="is_admin" value="1" {{ old('is_admin') ? 'checked' : '' }}
-                           class="w-4 h-4 rounded border-slate-300 text-[#000d6b] focus:ring-[#000d6b] mr-2.5">
-                    <span class="font-bold text-slate-900">Grant Administrator Access</span>
-                </label>
-                <p class="text-[11px] text-slate-400 ml-6.5 mt-0.5">Admin users can manage all employee accounts, reset signatures, and view aggregate reports.</p>
-            </div>
+            @if(auth()->user()->isSuperAdmin())
+                <div class="pt-2">
+                    <label for="role" class="block font-semibold text-slate-700 mb-1">
+                        Role & Hak Akses Pengguna <span class="text-rose-500">*</span>
+                    </label>
+                    <select name="role" id="role" required
+                            class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-sm bg-white font-medium">
+                        <option value="staff" {{ old('role', 'staff') == 'staff' ? 'selected' : '' }}>
+                            Staff Biasa (Hanya Absen Masuk/Pulang & Riwayat Pribadi)
+                        </option>
+                        <option value="admin_divisi" {{ old('role') == 'admin_divisi' ? 'selected' : '' }}>
+                            Admin Divisi / Koordinator (Danru Satpam, Supervisor CS - Kelola Anggota & Shift Divisinya)
+                        </option>
+                        <option value="super_admin" {{ old('role') == 'super_admin' ? 'selected' : '' }}>
+                            Super Administrator (Akses Penuh Seluruh Perusahaan & Semua Divisi)
+                        </option>
+                    </select>
+                </div>
+            @else
+                <input type="hidden" name="role" value="staff">
+            @endif
 
             <div class="pt-4 flex items-center justify-end gap-2">
                 <a href="{{ route('admin.pegawai.index') }}"

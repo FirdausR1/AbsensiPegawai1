@@ -119,13 +119,25 @@
                        placeholder="Enter new password if changing">
             </div>
 
-            <div class="pt-2">
-                <label class="flex items-center text-xs text-slate-700 cursor-pointer">
-                    <input type="checkbox" name="is_admin" value="1" {{ old('is_admin', $pegawai->is_admin) ? 'checked' : '' }}
-                           class="w-4 h-4 rounded border-slate-300 text-[#000d6b] focus:ring-[#000d6b] mr-2.5">
-                    <span class="font-bold text-slate-900">Administrator Privileges</span>
-                </label>
-            </div>
+            @if(auth()->user()->isSuperAdmin())
+                <div class="pt-2">
+                    <label for="role" class="block font-semibold text-slate-700 mb-1">
+                        Role & Hak Akses Pengguna <span class="text-rose-500">*</span>
+                    </label>
+                    <select name="role" id="role" required
+                            class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-sm bg-white font-medium">
+                        <option value="staff" {{ old('role', $pegawai->role ?: 'staff') == 'staff' ? 'selected' : '' }}>
+                            Staff Biasa (Hanya Absen Masuk/Pulang & Riwayat Pribadi)
+                        </option>
+                        <option value="admin_divisi" {{ old('role', $pegawai->role) == 'admin_divisi' ? 'selected' : '' }}>
+                            Admin Divisi / Koordinator (Danru Satpam, Supervisor CS - Kelola Anggota & Shift Divisinya)
+                        </option>
+                        <option value="super_admin" {{ old('role', $pegawai->role) == 'super_admin' || ($pegawai->is_admin && empty($pegawai->role)) ? 'selected' : '' }}>
+                            Super Administrator (Akses Penuh Seluruh Perusahaan & Semua Divisi)
+                        </option>
+                    </select>
+                </div>
+            @endif
 
             <div class="pt-4 flex items-center justify-end gap-2">
                 <a href="{{ route('admin.pegawai.index') }}"

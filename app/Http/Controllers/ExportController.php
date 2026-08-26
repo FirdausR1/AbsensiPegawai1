@@ -37,9 +37,25 @@ class ExportController extends Controller
      */
     public function exportSemua(Request $request, string $bulan = null)
     {
+        $currentUser = Auth::user();
         $bulan    = $bulan ?? Carbon::now()->format('Y-m');
         $carbonMonth = Carbon::createFromFormat('Y-m', $bulan)->startOfMonth();
-        $pegawais = Pegawai::where('is_admin', false)->orderBy('nama')->get();
+
+        $query = Pegawai::where('is_admin', false)->where('role', '!=', 'super_admin');
+        if ($currentUser && $currentUser->isDivisionAdmin()) {
+            $divisiId = $currentUser->divisi_id;
+            $area = $currentUser->area_kerja;
+            $query->where(function ($q) use ($divisiId, $area) {
+                if ($divisiId) {
+                    $q->where('divisi_id', $divisiId);
+                }
+                if ($area) {
+                    $q->orWhere('area_kerja', 'like', "%{$area}%");
+                }
+            });
+        }
+
+        $pegawais = $query->orderBy('nama')->get();
 
         if ($pegawais->isEmpty()) {
             return back()->with('error', 'Tidak ada pegawai yang ditemukan.');

@@ -19,6 +19,7 @@ class Pegawai extends Authenticatable
         'sheet_tab_name',
         'signature_path',
         'is_admin',
+        'role',
         'signature_updated_at',
     ];
 
@@ -41,6 +42,35 @@ class Pegawai extends Authenticatable
     public function divisi(): BelongsTo
     {
         return $this->belongsTo(Divisi::class);
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'super_admin' || ($this->is_admin && empty($this->role));
+    }
+
+    public function isDivisionAdmin(): bool
+    {
+        return $this->role === 'admin_divisi';
+    }
+
+    public function hasAdminAccess(): bool
+    {
+        return $this->isSuperAdmin() || $this->isDivisionAdmin() || (bool) $this->is_admin;
+    }
+
+    public function getRoleBadgeText(): string
+    {
+        if ($this->isSuperAdmin()) {
+            return 'SUPER ADMIN';
+        }
+
+        if ($this->isDivisionAdmin()) {
+            $divisiName = $this->divisi?->nama ?? $this->area_kerja ?? 'DIVISI';
+            return 'ADMIN ' . strtoupper($divisiName);
+        }
+
+        return 'STAFF';
     }
 
     public function getDivisi(): Divisi

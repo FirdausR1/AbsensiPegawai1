@@ -108,7 +108,19 @@
 
                             <!-- Role Column -->
                             <td class="py-4 px-5 font-medium">
-                                {{ $item->is_admin ? 'Admin' : 'Staff' }}
+                                @if($item->isSuperAdmin())
+                                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-extrabold bg-purple-50 text-purple-800 border border-purple-200">
+                                        SUPER ADMIN
+                                    </span>
+                                @elseif($item->isDivisionAdmin())
+                                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-extrabold bg-[#eef2ff] text-[#000d6b] border border-indigo-100">
+                                        {{ $item->getRoleBadgeText() }}
+                                    </span>
+                                @else
+                                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600">
+                                        STAFF
+                                    </span>
+                                @endif
                             </td>
 
                             <!-- Status Badge Column -->

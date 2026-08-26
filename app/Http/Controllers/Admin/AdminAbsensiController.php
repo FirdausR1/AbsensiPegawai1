@@ -12,7 +12,33 @@ class AdminAbsensiController extends Controller
 {
     public function index(Request $request)
     {
+        $currentUser = auth()->user();
         $query = Absensi::with('pegawai.divisi')->latest('tanggal');
+        $pegawaiQuery = Pegawai::query();
+
+        // Scope jika user adalah Admin Divisi (Danru/Supervisor)
+        if ($currentUser->isDivisionAdmin()) {
+            $divisiId = $currentUser->divisi_id;
+            $area = $currentUser->area_kerja;
+
+            $query->whereHas('pegawai', function ($q) use ($divisiId, $area) {
+                if ($divisiId) {
+                    $q->where('divisi_id', $divisiId);
+                }
+                if ($area) {
+                    $q->orWhere('area_kerja', 'like', "%{$area}%");
+                }
+            });
+
+            $pegawaiQuery->where(function ($q) use ($divisiId, $area) {
+                if ($divisiId) {
+                    $q->where('divisi_id', $divisiId);
+                }
+                if ($area) {
+                    $q->orWhere('area_kerja', 'like', "%{$area}%");
+                }
+            });
+        }
 
         if ($date = $request->input('date')) {
             $query->whereDate('tanggal', $date);
@@ -23,16 +49,30 @@ class AdminAbsensiController extends Controller
         }
 
         $absensis = $query->paginate(20)->withQueryString();
-        $pegawais = Pegawai::orderBy('nama')->get();
+        $pegawais = $pegawaiQuery->orderBy('nama')->get();
 
         $today = Carbon::today()->toDateString();
+        $statsQuery = Absensi::whereDate('tanggal', $today);
+        if ($currentUser->isDivisionAdmin()) {
+            $divisiId = $currentUser->divisi_id;
+            $area = $currentUser->area_kerja;
+            $statsQuery->whereHas('pegawai', function ($q) use ($divisiId, $area) {
+                if ($divisiId) {
+                    $q->where('divisi_id', $divisiId);
+                }
+                if ($area) {
+                    $q->orWhere('area_kerja', 'like', "%{$area}%");
+                }
+            });
+        }
+
         $stats = [
-            'total_today' => Absensi::whereDate('tanggal', $today)->count(),
-            'masuk_today' => Absensi::whereDate('tanggal', $today)->whereNotNull('jam_masuk')->count(),
-            'pulang_today' => Absensi::whereDate('tanggal', $today)->whereNotNull('jam_pulang')->count(),
+            'total_today' => (clone $statsQuery)->count(),
+            'masuk_today' => (clone $statsQuery)->whereNotNull('jam_masuk')->count(),
+            'pulang_today' => (clone $statsQuery)->whereNotNull('jam_pulang')->count(),
         ];
 
-        return view('admin.absensi.index', compact('absensis', 'pegawais', 'stats'));
+        return view('admin.absensi.index', compact('absensis', 'pegawais', 'stats', 'currentUser'));
     }
 
     /**
@@ -40,6 +80,8 @@ class AdminAbsensiController extends Controller
      */
     public function manualStore(Request $request)
     {
+        $currentUser = auth()->user();
+
         $request->validate([
             'pegawai_id' => ['required', 'exists:pegawais,id'],
             'tanggal'    => ['required', 'date'],
@@ -49,6 +91,11 @@ class AdminAbsensiController extends Controller
         ]);
 
         $pegawai = Pegawai::findOrFail($request->pegawai_id);
+
+        if ($currentUser->isDivisionAdmin() && $pegawai->divisi_id !== $currentUser->divisi_id) {
+            return back()->with('error', 'Anda hanya dapat menginput absen untuk anggota divisi Anda.');
+        }
+
         $date = Carbon::parse($request->tanggal);
 
         $jamMasuk = $request->jam_masuk 
@@ -79,6 +126,12 @@ class AdminAbsensiController extends Controller
      */
     public function update(Request $request, Absensi $absensi)
     {
+        $currentUser = auth()->user();
+
+        if ($currentUser->isDivisionAdmin() && $absensi->pegawai->divisi_id !== $currentUser->divisi_id) {
+            return back()->with('error', 'Akses ditolak.');
+        }
+
         $request->validate([
             'jam_masuk'  => ['nullable'],
             'jam_pulang' => ['nullable'],
@@ -104,6 +157,12 @@ class AdminAbsensiController extends Controller
 
     public function destroy(Absensi $absensi)
     {
+        $currentUser = auth()->user();
+
+        if ($currentUser->isDivisionAdmin() && $absensi->pegawai->divisi_id !== $currentUser->divisi_id) {
+            return back()->with('error', 'Akses ditolak.');
+        }
+
         $absensi->delete();
         return back()->with('success', 'Catatan absensi berhasil dihapus.');
     }
