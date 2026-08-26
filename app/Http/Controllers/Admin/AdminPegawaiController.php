@@ -99,6 +99,7 @@ class AdminPegawaiController extends Controller
             'divisi_id' => ['nullable', 'exists:divisis,id'],
             'role' => ['nullable', 'in:staff,admin_divisi,super_admin'],
             'sheet_tab_name' => ['nullable', 'string', 'max:255'],
+            'foto' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:4096'],
         ]);
 
         $divisiId = $request->divisi_id;
@@ -120,6 +121,11 @@ class AdminPegawaiController extends Controller
 
         $isAdmin = ($role === 'super_admin' || $role === 'admin_divisi');
 
+        $fotoPath = null;
+        if ($request->hasFile('foto')) {
+            $fotoPath = $request->file('foto')->store('avatars', 'public');
+        }
+
         Pegawai::create([
             'nama' => $request->nama,
             'email' => $request->email,
@@ -128,6 +134,7 @@ class AdminPegawaiController extends Controller
             'divisi_id' => $divisiId,
             'role' => $role,
             'is_admin' => $isAdmin,
+            'foto_path' => $fotoPath,
             'sheet_tab_name' => $request->sheet_tab_name ?: $request->nama,
         ]);
 
@@ -169,6 +176,7 @@ class AdminPegawaiController extends Controller
             'divisi_id' => ['nullable', 'exists:divisis,id'],
             'role' => ['nullable', 'in:staff,admin_divisi,super_admin'],
             'sheet_tab_name' => ['nullable', 'string', 'max:255'],
+            'foto' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:4096'],
         ]);
 
         $divisiId = $request->divisi_id;
@@ -197,6 +205,13 @@ class AdminPegawaiController extends Controller
             'is_admin' => $isAdmin,
             'sheet_tab_name' => $request->sheet_tab_name ?: $request->nama,
         ];
+
+        if ($request->hasFile('foto')) {
+            if ($pegawai->foto_path && Storage::disk('public')->exists($pegawai->foto_path)) {
+                Storage::disk('public')->delete($pegawai->foto_path);
+            }
+            $data['foto_path'] = $request->file('foto')->store('avatars', 'public');
+        }
 
         if ($request->filled('password')) {
             $data['password'] = Hash::make($request->password);

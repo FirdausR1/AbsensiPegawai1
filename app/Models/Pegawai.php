@@ -18,6 +18,7 @@ class Pegawai extends Authenticatable
         'divisi_id',
         'sheet_tab_name',
         'signature_path',
+        'foto_path',
         'is_admin',
         'role',
         'signature_updated_at',
@@ -130,6 +131,33 @@ class Pegawai extends Authenticatable
         $fallback->toleransi_menit = 15;
         $fallback->keterangan = 'Jam operasional standar';
         return $fallback;
+    }
+
+    public function getFotoUrl(): ?string
+    {
+        if ($this->foto_path) {
+            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($this->foto_path)) {
+                return \Illuminate\Support\Facades\Storage::disk('public')->url($this->foto_path);
+            }
+            if (file_exists(public_path($this->foto_path))) {
+                return asset($this->foto_path);
+            }
+        }
+        return null;
+    }
+
+    public function hasFoto(): bool
+    {
+        return !empty($this->getFotoUrl());
+    }
+
+    public function getInitials(): string
+    {
+        $words = explode(' ', trim($this->nama ?? 'Pegawai'));
+        if (count($words) >= 2) {
+            return strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
+        }
+        return strtoupper(substr($this->nama ?: 'PG', 0, 2));
     }
 
     public function hasSignature(): bool

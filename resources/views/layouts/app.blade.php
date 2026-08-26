@@ -257,9 +257,15 @@
                 <!-- User Profile Dropdown Pill -->
                 @auth
                     <a href="{{ route('profile.edit') }}" class="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full hover:bg-slate-100 transition group">
-                        <img src="{{ asset('images/default-avatar.jpg') }}"
-                             alt="{{ auth()->user()->nama }}"
-                             class="w-8 h-8 rounded-full object-cover border border-slate-300">
+                        @if(auth()->user()->hasFoto())
+                            <img src="{{ auth()->user()->getFotoUrl() }}"
+                                 alt="{{ auth()->user()->nama }}"
+                                 class="w-8 h-8 rounded-full object-cover border border-slate-300">
+                        @else
+                            <div class="w-8 h-8 rounded-full bg-[#000d6b] text-white font-bold flex items-center justify-center text-xs border border-slate-300">
+                                {{ auth()->user()->getInitials() }}
+                            </div>
+                        @endif
                         <div class="hidden sm:block text-left">
                             <div class="text-xs font-bold text-slate-800 group-hover:text-[#000d6b] leading-tight">
                                 {{ auth()->user()->nama }}

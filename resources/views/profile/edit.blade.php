@@ -35,9 +35,15 @@
 
                 <!-- Avatar Picture -->
                 <div class="mt-2 relative inline-block">
-                    <img src="{{ asset('images/default-avatar.jpg') }}"
-                         alt="{{ $pegawai->nama }}"
-                         class="w-28 h-28 rounded-2xl object-cover border-2 border-slate-200 shadow-md mx-auto">
+                    @if($pegawai->hasFoto())
+                        <img src="{{ $pegawai->getFotoUrl() }}"
+                             alt="{{ $pegawai->nama }}"
+                             class="w-28 h-28 rounded-2xl object-cover border-2 border-slate-200 shadow-md mx-auto">
+                    @else
+                        <div class="w-28 h-28 rounded-2xl bg-[#000d6b] text-white font-extrabold flex items-center justify-center text-3xl border-2 border-slate-200 shadow-md mx-auto">
+                            {{ $pegawai->getInitials() }}
+                        </div>
+                    @endif
                     @if($pegawai->is_admin)
                         <span class="absolute -bottom-2 -right-2 bg-[#000d6b] text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow">
                             ADMIN
@@ -231,9 +237,17 @@
                     </div>
                 @endif
 
-                <form method="POST" action="{{ route('profile.update') }}" class="space-y-4 text-xs">
+                <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="space-y-4 text-xs">
                     @csrf
                     @method('PUT')
+
+                    <div>
+                        <label for="foto" class="block font-semibold text-slate-700 mb-1">Foto Profil (JPG, PNG, WEBP, Maks. 4MB)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="file" name="foto" id="foto" accept="image/*"
+                                   class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs text-slate-700 bg-white file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#000d6b] file:text-white hover:file:bg-[#001253]">
+                        </div>
+                    </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>

@@ -39,8 +39,16 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('admin.pegawai.store') }}" class="space-y-4 text-xs">
+        <form method="POST" action="{{ route('admin.pegawai.store') }}" enctype="multipart/form-data" class="space-y-4 text-xs">
             @csrf
+
+            <div>
+                <label for="foto" class="block font-semibold text-slate-700 mb-1">
+                    Foto Profil (Opsional - JPG, PNG, WEBP)
+                </label>
+                <input type="file" name="foto" id="foto" accept="image/*"
+                       class="w-full px-3.5 py-2 rounded-lg border border-slate-300 text-xs text-slate-700 bg-white file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#000d6b] file:text-white hover:file:bg-[#001253]">
+            </div>
 
             <div>
                 <label for="nama" class="block font-semibold text-slate-700 mb-1">

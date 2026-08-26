@@ -86,9 +86,13 @@
                             <!-- Employee Column with Initials Badge -->
                             <td class="py-4 px-5">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-full bg-[#e2e8f0] text-[#1e3a8a] font-bold flex items-center justify-center text-xs shrink-0 border border-slate-300/60">
-                                        {{ $initials }}
-                                    </div>
+                                    @if($item->hasFoto())
+                                        <img src="{{ $item->getFotoUrl() }}" alt="{{ $item->nama }}" class="w-9 h-9 rounded-full object-cover border border-slate-300 shrink-0">
+                                    @else
+                                        <div class="w-9 h-9 rounded-full bg-[#e2e8f0] text-[#1e3a8a] font-bold flex items-center justify-center text-xs shrink-0 border border-slate-300/60">
+                                            {{ $item->getInitials() }}
+                                        </div>
+                                    @endif
                                     <div>
                                         <div class="font-bold text-slate-900 text-xs sm:text-sm">{{ $item->nama }}</div>
                                         <div class="text-[11px] text-slate-400 font-normal">{{ $item->email }}</div>

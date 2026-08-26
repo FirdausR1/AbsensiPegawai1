@@ -47,12 +47,15 @@ class ProfileController extends Controller
             'email'      => ['required', 'string', 'email', 'max:255', Rule::unique('pegawais')->ignore($pegawai->id)],
             'area_kerja' => ['nullable', 'string', 'max:255'],
             'password'   => ['nullable', 'string', 'min:6', 'confirmed'],
+            'foto'       => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:4096'],
         ], [
             'nama.required'      => 'Nama lengkap wajib diisi.',
             'email.required'     => 'Alamat email wajib diisi.',
             'email.unique'       => 'Alamat email ini sudah digunakan oleh akun lain.',
             'password.min'       => 'Password baru minimal 6 karakter.',
             'password.confirmed' => 'Konfirmasi password baru tidak cocok.',
+            'foto.image'         => 'File yang diupload harus berupa gambar.',
+            'foto.max'           => 'Ukuran foto maksimal 4MB.',
         ]);
 
         $updateData = [
@@ -60,6 +63,14 @@ class ProfileController extends Controller
             'email'      => $request->email,
             'area_kerja' => $request->area_kerja,
         ];
+
+        // Handle foto upload
+        if ($request->hasFile('foto')) {
+            if ($pegawai->foto_path && Storage::disk('public')->exists($pegawai->foto_path)) {
+                Storage::disk('public')->delete($pegawai->foto_path);
+            }
+            $updateData['foto_path'] = $request->file('foto')->store('avatars', 'public');
+        }
 
         // Jika sheet_tab_name belum diubah admin, default ikuti nama baru
         if (empty($pegawai->sheet_tab_name) || $pegawai->sheet_tab_name === $pegawai->getOriginal('nama')) {
