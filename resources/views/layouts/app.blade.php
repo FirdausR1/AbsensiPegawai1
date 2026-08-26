@@ -121,13 +121,23 @@
                 <span>Digital Signature</span>
             </a>
 
+            <a href="{{ route('cuti.index') }}"
+               class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs transition {{ request()->routeIs('cuti.*') ? 'sidebar-active' : 'sidebar-inactive' }}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <span>Pengajuan Cuti</span>
+            </a>
+
             <a href="{{ route('export.sendiri') }}"
                class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs transition sidebar-inactive">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                 </svg>
                 <span>Export Excel</span>
-            </a>            @if(auth()->check() && auth()->user()->hasAdminAccess())
+            </a>
+
+            @if(auth()->check() && auth()->user()->hasAdminAccess())
                 <div class="pt-4 pb-1">
                     <div class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                         {{ auth()->user()->isSuperAdmin() ? 'Admin Panel' : 'Koordinator Divisi' }}
@@ -148,6 +158,14 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                     </svg>
                     <span>All Attendance</span>
+                </a>
+
+                <a href="{{ route('admin.cuti.index') }}"
+                   class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs transition {{ request()->routeIs('admin.cuti.*') ? 'sidebar-active' : 'sidebar-inactive' }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                    </svg>
+                    <span>Persetujuan Cuti</span>
                 </a>
 
                 <a href="{{ route('admin.divisi.index') }}"
@@ -241,6 +259,7 @@
             <a href="{{ route('absen.riwayat') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('absen.riwayat') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-700' }}">History</a>
             <a href="{{ route('profile.edit') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('profile.edit') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-700' }}">Profile</a>
             <a href="{{ route('profile.signature') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('profile.signature') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-700' }}">Digital Signature</a>
+            <a href="{{ route('cuti.index') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('cuti.*') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-700' }}">Pengajuan Cuti</a>
             <a href="{{ route('export.sendiri') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold text-slate-700">Export Excel</a>
             @if(auth()->check() && auth()->user()->hasAdminAccess())
                 <div class="pt-2 pb-1 border-t border-slate-100">
@@ -250,6 +269,7 @@
                 </div>
                 <a href="{{ route('admin.pegawai.index') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('admin.pegawai.*') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-700' }}">Manage Employees</a>
                 <a href="{{ route('admin.absensi.index') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('admin.absensi.*') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-700' }}">All Attendance</a>
+                <a href="{{ route('admin.cuti.index') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('admin.cuti.*') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-700' }}">Persetujuan Cuti</a>
                 <a href="{{ route('admin.divisi.index') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('admin.divisi.*') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-700' }}">Shift & Waktu Kerja</a>
             @endif
             <form method="POST" action="{{ route('logout') }}" class="pt-2 border-t">

@@ -212,8 +212,16 @@ class AbsensiExportService
             $keterangan = '';
             $isAlpa = false;
 
-            if ($absensi && !empty($absensi->keterangan)) {
+            $approvedCuti = $pegawai->getApprovedCutiOnDate($date);
+
+            if ($approvedCuti) {
+                $keterangan = "Cuti ({$approvedCuti->jumlah_hari} Hari - {$approvedCuti->tipe_cuti})";
+                $rowBg = 'e8eaf6'; // ungu/biru muda lembut
+            } elseif ($absensi && !empty($absensi->keterangan)) {
                 $keterangan = $absensi->keterangan;
+                if (stripos($keterangan, 'cuti') !== false) {
+                    $rowBg = 'e8eaf6';
+                }
             } elseif ($absensi && $absensi->jam_masuk) {
                 // Pegawai hadir kerja (termasuk Satpam / Shift di hari libur atau akhir pekan)
                 $menitTerlambat = $absensi->getMenitTerlambat($pegawai);

@@ -39,6 +39,21 @@ class Pegawai extends Authenticatable
         return $this->hasMany(Absensi::class);
     }
 
+    public function cutis()
+    {
+        return $this->hasMany(Cuti::class);
+    }
+
+    public function getApprovedCutiOnDate(\Carbon\Carbon $date): ?Cuti
+    {
+        $dateStr = $date->toDateString();
+        return $this->cutis()
+            ->where('status', 'approved')
+            ->where('tanggal_mulai', '<=', $dateStr)
+            ->where('tanggal_selesai', '>=', $dateStr)
+            ->first();
+    }
+
     public function divisi(): BelongsTo
     {
         return $this->belongsTo(Divisi::class);

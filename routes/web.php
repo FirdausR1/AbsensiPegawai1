@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\CutiController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -22,6 +23,11 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [AbsensiController::class, 'dashboard'])->name('dashboard');
     Route::get('/riwayat', [AbsensiController::class, 'riwayat'])->name('absen.riwayat');
+
+    // Pengajuan Cuti (Employee)
+    Route::get('/cuti', [CutiController::class, 'index'])->name('cuti.index');
+    Route::post('/cuti', [CutiController::class, 'store'])->name('cuti.store');
+    Route::delete('/cuti/{cuti}', [CutiController::class, 'cancel'])->name('cuti.cancel');
 
     // Profile / Data Diri
     Route::get('/profile', [ProfileController::class, 'showProfile'])->name('profile.edit');
@@ -49,6 +55,11 @@ Route::middleware('auth')->group(function () {
         Route::put('/pegawai/{pegawai}', [\App\Http\Controllers\Admin\AdminPegawaiController::class, 'update'])->name('pegawai.update');
         Route::delete('/pegawai/{pegawai}', [\App\Http\Controllers\Admin\AdminPegawaiController::class, 'destroy'])->name('pegawai.destroy');
         Route::post('/pegawai/{pegawai}/reset-signature', [\App\Http\Controllers\Admin\AdminPegawaiController::class, 'resetSignature'])->name('pegawai.reset-signature');
+
+        // Kelola Persetujuan Cuti (Admin)
+        Route::get('/cuti', [\App\Http\Controllers\Admin\AdminCutiController::class, 'index'])->name('cuti.index');
+        Route::post('/cuti/{cuti}/approve', [\App\Http\Controllers\Admin\AdminCutiController::class, 'approve'])->name('cuti.approve');
+        Route::post('/cuti/{cuti}/reject', [\App\Http\Controllers\Admin\AdminCutiController::class, 'reject'])->name('cuti.reject');
 
         // Kelola Absensi & Absen Terlewat
         Route::get('/absensi', [\App\Http\Controllers\Admin\AdminAbsensiController::class, 'index'])->name('absensi.index');
