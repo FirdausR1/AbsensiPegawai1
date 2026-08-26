@@ -89,16 +89,16 @@ class AdminJadwalShiftController extends Controller
 
         $currentUser = Auth::user();
 
-        // Scope check untuk Division Admin
+        $targetPegawai = Pegawai::with('divisi')->find($request->pegawai_id);
+
         if ($currentUser->isDivisionAdmin()) {
-            $pegawai = Pegawai::findOrFail($request->pegawai_id);
-            if ($pegawai->divisi_id !== $currentUser->divisi_id) {
+            if ($targetPegawai && $targetPegawai->divisi_id !== $currentUser->divisi_id) {
                 return response()->json(['error' => 'Akses ditolak.'], 403);
             }
         }
 
         // Default jam jika tidak diisi
-        $jam = JadwalShift::defaultJam($request->tipe_shift);
+        $jam = JadwalShift::defaultJam($request->tipe_shift, $targetPegawai);
 
         JadwalShift::updateOrCreate(
             [
@@ -132,7 +132,8 @@ class AdminJadwalShiftController extends Controller
         ]);
 
         $currentUser = Auth::user();
-        $jam = JadwalShift::defaultJam($request->tipe_shift);
+        $targetPegawai = Pegawai::with('divisi')->find($request->pegawai_id);
+        $jam = JadwalShift::defaultJam($request->tipe_shift, $targetPegawai);
 
         $start = Carbon::parse($request->tanggal_dari);
         $end   = Carbon::parse($request->tanggal_sampai);

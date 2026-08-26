@@ -44,7 +44,7 @@ class JadwalShiftController extends Controller
         ]);
 
         $tanggal = Carbon::parse($request->tanggal);
-        $jam = JadwalShift::defaultJam($request->tipe_shift);
+        $jam = JadwalShift::defaultJam($request->tipe_shift, $pegawai);
 
         // Cek apakah sudah ada jadwal
         $existing = JadwalShift::where('pegawai_id', $pegawai->id)

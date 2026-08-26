@@ -167,6 +167,9 @@
                 <p class="text-[11px] text-slate-500 mb-4 leading-relaxed">
                     Klik tanggal pada kalender (masa depan) atau isi form di bawah untuk mengajukan perubahan shift ke Danru/Koordinator.
                 </p>
+                @php
+                    $shiftOptions = \App\Models\JadwalShift::getShiftInfoList($pegawai);
+                @endphp
                 <form method="POST" action="{{ route('jadwal-shift.request') }}" class="space-y-3 text-xs" id="request-form">
                     @csrf
                     <div>
@@ -179,10 +182,9 @@
                         <label class="block font-semibold text-slate-700 mb-1">Shift yang Diinginkan <span class="text-rose-500">*</span></label>
                         <select name="tipe_shift" id="req-shift" required
                                 class="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-xs bg-white">
-                            <option value="Pagi">☀️ Shift Pagi (07:00 – 19:00)</option>
-                            <option value="Malam">🌙 Shift Malam (19:00 – 07:00)</option>
-                            <option value="Siang">🌤️ Shift Siang (12:00 – 21:00)</option>
-                            <option value="Libur">🏠 Minta Hari Libur</option>
+                            @foreach($shiftOptions as $key => $opt)
+                                <option value="{{ $key }}">{{ $opt['icon'] }} {{ $opt['label'] }} ({{ $opt['jam'] }})</option>
+                            @endforeach
                         </select>
                     </div>
                     <div>
@@ -199,12 +201,11 @@
 
             <!-- Info Card -->
             <div class="bg-gradient-to-br from-amber-50 to-white border border-amber-200 rounded-2xl p-4 shadow-sm">
-                <div class="text-xs font-bold text-amber-800 mb-2">ℹ️ Ketentuan Shift</div>
+                <div class="text-xs font-bold text-amber-800 mb-2">ℹ️ Ketentuan Shift ({{ $pegawai->area_kerja ?: ($pegawai->divisi?->nama ?? 'Umum') }})</div>
                 <ul class="text-[11px] text-amber-700 space-y-1.5 leading-relaxed">
-                    <li>• ☀️ <strong>Shift Pagi:</strong> 07:00 – 19:00</li>
-                    <li>• 🌙 <strong>Shift Malam:</strong> 19:00 – 07:00</li>
-                    <li>• 🌤️ <strong>Shift Siang:</strong> 12:00 – 21:00</li>
-                    <li>• 🏠 <strong>Hari Libur:</strong> Tidak perlu absen</li>
+                    @foreach($shiftOptions as $key => $opt)
+                        <li>• {{ $opt['icon'] }} <strong>{{ $opt['label'] }}:</strong> {{ $opt['jam'] }}</li>
+                    @endforeach
                     <li>• Hari tanpa jadwal = <strong>Libur otomatis</strong> (tidak ALPA)</li>
                 </ul>
             </div>

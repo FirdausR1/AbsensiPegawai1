@@ -37,9 +37,9 @@
         <!-- Legend -->
         <div class="flex flex-wrap items-center gap-3">
             <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tipe Shift:</span>
-            <span class="px-2.5 py-1 rounded text-[10px] font-bold border bg-amber-100 text-amber-800 border-amber-200">☀️ Pagi (07:00-19:00)</span>
-            <span class="px-2.5 py-1 rounded text-[10px] font-bold border bg-indigo-100 text-indigo-800 border-indigo-200">🌙 Malam (19:00-07:00)</span>
-            <span class="px-2.5 py-1 rounded text-[10px] font-bold border bg-sky-100 text-sky-800 border-sky-200">🌤️ Siang (12:00-21:00)</span>
+            <span class="px-2.5 py-1 rounded text-[10px] font-bold border bg-amber-100 text-amber-800 border-amber-200">☀️ Pagi</span>
+            <span class="px-2.5 py-1 rounded text-[10px] font-bold border bg-indigo-100 text-indigo-800 border-indigo-200">🌙 Malam</span>
+            <span class="px-2.5 py-1 rounded text-[10px] font-bold border bg-sky-100 text-sky-800 border-sky-200">🌤️ Siang</span>
             <span class="px-2.5 py-1 rounded text-[10px] font-bold border bg-slate-100 text-slate-500 border-slate-200">🏠 Libur</span>
             <span class="px-2.5 py-1 rounded text-[10px] font-bold border bg-white text-slate-300 border-dashed border-slate-300">Belum Dijadwalkan</span>
         </div>
@@ -94,9 +94,9 @@
             <div class="sm:col-span-2">
                 <label class="block font-semibold text-slate-700 mb-1">Tipe Shift</label>
                 <select name="tipe_shift" required class="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-xs bg-white">
-                    <option value="Pagi">☀️ Shift Pagi (07:00–19:00)</option>
-                    <option value="Malam">🌙 Shift Malam (19:00–07:00)</option>
-                    <option value="Siang">🌤️ Shift Siang (12:00–21:00)</option>
+                    <option value="Pagi">☀️ Shift Pagi</option>
+                    <option value="Malam">🌙 Shift Malam</option>
+                    <option value="Siang">🌤️ Shift Siang</option>
                     <option value="Libur">🏠 Hari Libur</option>
                 </select>
             </div>
@@ -277,7 +277,7 @@
             <div>
                 <label class="block font-semibold text-slate-700 mb-2">Pilih Tipe Shift</label>
                 <div class="grid grid-cols-2 gap-2">
-                    @foreach(['Pagi' => ['☀️', 'amber', '07:00 – 19:00'], 'Malam' => ['🌙', 'indigo', '19:00 – 07:00'], 'Siang' => ['🌤️', 'sky', '12:00 – 21:00'], 'Libur' => ['🏠', 'slate', 'Hari Istirahat']] as $tipe => [$icon, $color, $desc])
+                    @foreach(['Pagi' => ['☀️', 'amber', 'Shift Pagi'], 'Malam' => ['🌙', 'indigo', 'Shift Malam'], 'Siang' => ['🌤️', 'sky', 'Shift Siang'], 'Libur' => ['🏠', 'slate', 'Hari Istirahat']] as $tipe => [$icon, $color, $desc])
                         <label class="shift-option flex flex-col items-center p-3 rounded-xl border-2 cursor-pointer transition hover:border-[#000d6b]
                             border-slate-200" data-tipe="{{ $tipe }}">
                             <input type="radio" name="tipe_shift" value="{{ $tipe }}" class="sr-only shift-radio" required>
