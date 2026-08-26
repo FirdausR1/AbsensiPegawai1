@@ -1,0 +1,35 @@
+{
+    "name": "dhan/absensi-app",
+    "type": "project",
+    "description": "Aplikasi absensi pegawai yang menulis langsung ke Google Sheets (Daftar Hadir Tenaga Kerja)",
+    "require": {
+        "php": "^8.1",
+        "laravel/framework": "^10.0",
+        "laravel/sanctum": "^3.2",
+        "google/apiclient": "^2.15",
+        "revolution/laravel-google-sheets": "^6.0",
+        "phpoffice/phpspreadsheet": "^5.8"
+    },
+    "require-dev": {
+        "laravel/breeze": "^1.29",
+        "fakerphp/faker": "^1.23"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "scripts": {
+        "pre-autoload-dump": "Google\\Task\\Composer::cleanup"
+    },
+    "extra": {
+        "google/apiclient-services": [
+            "Sheets",
+            "Drive"
+        ]
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
