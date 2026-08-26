@@ -16,7 +16,23 @@ class ProfileController extends Controller
      */
     public function showProfile()
     {
-        return view('profile.edit', ['pegawai' => Auth::user()]);
+        $pegawai = Auth::user();
+        $startOfMonth = \Carbon\Carbon::now()->startOfMonth()->toDateString();
+        $endOfMonth = \Carbon\Carbon::now()->endOfMonth()->toDateString();
+
+        $stats = [
+            'total_bulan_ini' => \App\Models\Absensi::where('pegawai_id', $pegawai->id)
+                ->whereBetween('tanggal', [$startOfMonth, $endOfMonth])
+                ->whereNotNull('jam_masuk')
+                ->count(),
+            'total_lengkap' => \App\Models\Absensi::where('pegawai_id', $pegawai->id)
+                ->whereBetween('tanggal', [$startOfMonth, $endOfMonth])
+                ->whereNotNull('jam_masuk')
+                ->whereNotNull('jam_pulang')
+                ->count(),
+        ];
+
+        return view('profile.edit', compact('pegawai', 'stats'));
     }
 
     /**

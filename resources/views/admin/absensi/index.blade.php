@@ -1,195 +1,149 @@
 @extends('layouts.app')
 
-@section('title', 'Rekap Absensi - Panel Admin')
+@section('title', 'All Attendance - PT Inti Sarana Wijaya')
 
 @section('content')
 <div class="space-y-6">
     <!-- Header & Navigation -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <div class="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-1">
-                <a href="{{ route('dashboard') }}" class="hover:text-indigo-600 transition flex items-center gap-1">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Dashboard
-                </a>
+            <div class="flex items-center gap-2 text-xs font-semibold text-slate-400 mb-1">
+                <a href="{{ route('dashboard') }}" class="hover:text-[#000d6b] transition">Dashboard</a>
                 <span>/</span>
-                <span class="text-slate-700">Admin</span>
+                <span class="text-slate-500">Admin</span>
                 <span>/</span>
-                <span class="text-slate-900 font-bold">Rekap Absensi</span>
+                <span class="text-slate-800 font-bold">Attendance Records</span>
             </div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900">📊 Rekap & Log Absensi</h1>
-            <p class="text-xs sm:text-sm text-slate-500 mt-1">Pantau kehadiran seluruh pegawai, status sinkronisasi Google Sheets, dan input absensi manual.</p>
+            <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Organization Attendance Records</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Real-time attendance tracking, filtering, manual log input, and bulk export.</p>
         </div>
 
-        <!-- Action & Back Buttons -->
-        <div class="flex items-center gap-2.5">
-            <a href="{{ route('dashboard') }}"
-               class="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-xl transition shadow-sm">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                </svg>
-                Kembali ke Dashboard
-            </a>
-
+        <!-- Action Buttons -->
+        <div class="flex items-center gap-2 flex-wrap">
             <button type="button" onclick="document.getElementById('manual-modal').classList.remove('hidden')"
-                    class="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition shadow-md shadow-indigo-200">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
-                Input Absen Manual
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg transition shadow-sm">
+                <span>➕</span> Input Manual Log
             </button>
 
-            {{-- Export semua pegawai bulan ini --}}
             <a href="{{ route('admin.export.semua', now()->format('Y-m')) }}"
-               class="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold text-white bg-green-600 hover:bg-green-700 rounded-xl transition shadow-md shadow-green-200">
-                📥 Export Semua (.zip)
+               class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#000d6b] hover:bg-[#001253] rounded-lg transition shadow-sm">
+                <span>📥</span> Export All (.zip)
             </a>
         </div>
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-            <div class="text-xs font-bold text-slate-500 uppercase">Tercatat Hari Ini</div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+            <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Logged Today</div>
             <div class="text-2xl font-extrabold text-slate-900 mt-1">{{ $stats['total_today'] }}</div>
         </div>
-        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-            <div class="text-xs font-bold text-slate-500 uppercase">Absen Masuk</div>
-            <div class="text-2xl font-extrabold text-emerald-600 mt-1">{{ $stats['masuk_today'] }}</div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+            <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Clock-Ins Today</div>
+            <div class="text-2xl font-extrabold text-emerald-700 mt-1">{{ $stats['masuk_today'] }}</div>
         </div>
-        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-            <div class="text-xs font-bold text-slate-500 uppercase">Absen Pulang</div>
-            <div class="text-2xl font-extrabold text-indigo-600 mt-1">{{ $stats['pulang_today'] }}</div>
-        </div>
-        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-            <div class="text-xs font-bold text-slate-500 uppercase">Gagal Sync Sheet</div>
-            <div class="text-2xl font-extrabold text-rose-600 mt-1">{{ $stats['failed_sync'] }}</div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+            <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Clock-Outs Today</div>
+            <div class="text-2xl font-extrabold text-[#000d6b] mt-1">{{ $stats['pulang_today'] }}</div>
         </div>
     </div>
 
-    <!-- Filter & Table Container -->
-    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-        <!-- Filter Form -->
-        <form method="GET" action="{{ route('admin.absensi.index') }}" class="p-4 sm:p-5 border-b border-slate-200 bg-slate-50/50">
-            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                <div>
-                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Filter Tanggal</label>
-                    <input type="date" name="date" value="{{ request('date') }}"
-                           class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white">
-                </div>
+    <!-- Filter Card -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+        <form method="GET" action="{{ route('admin.absensi.index') }}" class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+            <div>
+                <label for="date" class="block font-semibold text-slate-600 mb-1">Filter by Date</label>
+                <input type="date" name="date" id="date" value="{{ request('date') }}"
+                       class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none">
+            </div>
 
-                <div>
-                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Filter Pegawai</label>
-                    <select name="pegawai_id" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white">
-                        <option value="">Semua Pegawai</option>
-                        @foreach($pegawais as $peg)
-                            <option value="{{ $peg->id }}" {{ request('pegawai_id') == $peg->id ? 'selected' : '' }}>
-                                {{ $peg->nama }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+            <div>
+                <label for="pegawai_id" class="block font-semibold text-slate-600 mb-1">Filter by Employee</label>
+                <select name="pegawai_id" id="pegawai_id" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none">
+                    <option value="">All Employees</option>
+                    @foreach($pegawais as $p)
+                        <option value="{{ $p->id }}" {{ request('pegawai_id') == $p->id ? 'selected' : '' }}>
+                            {{ $p->nama }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
 
-                <div>
-                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Status Sync Sheet</label>
-                    <select name="synced" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white">
-                        <option value="">Semua Status</option>
-                        <option value="1" {{ request('synced') === '1' ? 'selected' : '' }}>Berhasil Ter-Sync</option>
-                        <option value="0" {{ request('synced') === '0' ? 'selected' : '' }}>Gagal / Belum Sync</option>
-                    </select>
-                </div>
-
-                <div class="flex items-end gap-2">
-                    <button type="submit" class="flex-1 py-2 px-4 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition shadow-sm">
-                        Terapkan Filter
-                    </button>
-                    @if(request()->hasAny(['date', 'pegawai_id', 'synced']))
-                        <a href="{{ route('admin.absensi.index') }}" class="py-2 px-3 bg-white hover:bg-slate-100 text-slate-600 border border-slate-300 font-bold text-xs rounded-xl transition">
-                            Reset
-                        </a>
-                    @endif
-                </div>
+            <div class="sm:col-span-2 flex items-end gap-2">
+                <button type="submit" class="px-4 py-2 bg-[#000d6b] hover:bg-[#001253] text-white font-bold rounded-lg shadow-sm transition">
+                    Apply Filter
+                </button>
+                <a href="{{ route('admin.absensi.index') }}" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition">
+                    Reset
+                </a>
             </div>
         </form>
+    </div>
 
-        <!-- Table -->
+    <!-- Attendance Table -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-6">
+        <div class="flex items-center gap-2 mb-4">
+            <span class="section-bar"></span>
+            <h3 class="text-sm font-bold text-slate-900">Attendance Log</h3>
+        </div>
+
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
-                <thead class="bg-slate-100/80 text-slate-600 uppercase text-[11px] font-bold border-b border-slate-200">
-                    <tr>
-                        <th class="px-5 py-3.5">Tanggal</th>
-                        <th class="px-4 py-3.5">Pegawai</th>
-                        <th class="px-4 py-3.5">Jam Masuk</th>
-                        <th class="px-4 py-3.5">Jam Pulang</th>
-                        <th class="px-4 py-3.5 text-center">Sync Sheet</th>
-                        <th class="px-5 py-3.5 text-right">Aksi</th>
+                <thead>
+                    <tr class="bg-slate-50 text-slate-500 border-b border-slate-200">
+                        <th class="py-3 px-4 font-semibold">Date</th>
+                        <th class="py-3 px-4 font-semibold">Employee</th>
+                        <th class="py-3 px-4 font-semibold">Clock-In</th>
+                        <th class="py-3 px-4 font-semibold">Clock-Out</th>
+                        <th class="py-3 px-4 font-semibold">Status</th>
+                        <th class="py-3 px-4 font-semibold text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
-                    @forelse($absensis as $abs)
-                        <tr class="hover:bg-slate-50 transition">
-                            <td class="px-5 py-4 font-semibold text-slate-800 whitespace-nowrap">
-                                {{ $abs->tanggal ? $abs->tanggal->translatedFormat('d M Y') : '-' }}
-                                <div class="text-[11px] font-normal text-slate-400">
-                                    {{ $abs->tanggal ? $abs->tanggal->translatedFormat('l') : '' }}
-                                </div>
+                    @forelse($absensis as $item)
+                        <tr class="hover:bg-slate-50/70 transition">
+                            <td class="py-3 px-4 font-bold text-slate-800">
+                                {{ \Carbon\Carbon::parse($item->tanggal)->translatedFormat('d M Y') }}
                             </td>
-                            <td class="px-4 py-4">
-                                <div class="font-bold text-slate-900">{{ $abs->pegawai->nama ?? 'Pegawai Terhapus' }}</div>
-                                <div class="text-[11px] text-slate-400">Tab: {{ $abs->pegawai->sheet_tab_name ?? '-' }}</div>
+                            <td class="py-3 px-4">
+                                <div class="font-bold text-slate-900">{{ $item->pegawai->nama ?? 'Unknown' }}</div>
+                                <div class="text-[10px] text-slate-400">{{ $item->pegawai->area_kerja ?? 'General' }}</div>
                             </td>
-                            <td class="px-4 py-4 font-mono font-medium text-emerald-700">
-                                {{ $abs->jam_masuk ? substr($abs->jam_masuk, 0, 5) . ' WIB' : '-' }}
+                            <td class="py-3 px-4 font-bold text-emerald-700">
+                                {{ $item->jam_masuk ? substr($item->jam_masuk, 0, 5) . ' WIB' : '-' }}
                             </td>
-                            <td class="px-4 py-4 font-mono font-medium text-slate-700">
-                                {{ $abs->jam_pulang ? substr($abs->jam_pulang, 0, 5) . ' WIB' : '-' }}
+                            <td class="py-3 px-4 font-bold text-[#000d6b]">
+                                {{ $item->jam_pulang ? substr($item->jam_pulang, 0, 5) . ' WIB' : '-' }}
                             </td>
-                            <td class="px-4 py-4 text-center">
-                                @if($abs->synced_to_sheet)
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                        <span>✓</span> Tersinkron
+                            <td class="py-3 px-4">
+                                @if($item->jam_masuk && $item->jam_pulang)
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                        Complete
+                                    </span>
+                                @elseif($item->jam_masuk)
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                        No Clock-out
                                     </span>
                                 @else
-                                    <div class="inline-flex flex-col items-center">
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200"
-                                              title="{{ $abs->sync_error ?: 'Gagal sinkronisasi' }}">
-                                            <span>✕</span> Gagal Sync
-                                        </span>
-                                    </div>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600">
+                                        -
+                                    </span>
                                 @endif
                             </td>
-                            <td class="px-5 py-4 text-right">
-                                <div class="flex items-center justify-end gap-1.5">
-                                    <!-- Retry Sync Button -->
-                                    <form method="POST" action="{{ route('admin.absensi.retry-sync', $abs) }}" class="inline">
-                                        @csrf
-                                        <button type="submit" title="Sinkronkan Ulang ke Google Sheets"
-                                                class="px-2.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white rounded-lg border border-emerald-200 transition">
-                                            Sync Ulang
-                                        </button>
-                                    </form>
-
-                                    <!-- Delete Button -->
-                                    <form method="POST" action="{{ route('admin.absensi.destroy', $abs) }}"
-                                          onsubmit="return confirm('Apakah Anda yakin ingin menghapus catatan absensi ini?');"
-                                          class="inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" title="Hapus Catatan"
-                                                class="px-2.5 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-600 hover:text-white rounded-lg border border-rose-200 transition">
-                                            Hapus
-                                        </button>
-                                    </form>
-                                </div>
+                            <td class="py-3 px-4 text-right">
+                                <form method="POST" action="{{ route('admin.absensi.destroy', $item->id) }}" class="inline" onsubmit="return confirm('Delete this attendance record?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="px-2.5 py-1 text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 font-bold rounded-md transition text-[11px]">
+                                        Delete
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-12 text-center text-slate-500">
-                                <div class="text-3xl mb-2">📋</div>
-                                <p class="text-sm font-semibold">Belum ada riwayat absensi yang tercatat.</p>
+                            <td colspan="6" class="py-8 text-center text-slate-400">
+                                No attendance records found.
                             </td>
                         </tr>
                     @endforelse
@@ -198,30 +152,26 @@
         </div>
 
         @if($absensis->hasPages())
-            <div class="p-4 border-t border-slate-200">
+            <div class="mt-4 pt-3 border-t border-slate-100">
                 {{ $absensis->links() }}
             </div>
         @endif
     </div>
 </div>
 
-<!-- Modal Input Absen Manual -->
-<div id="manual-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-5">
-        <div class="flex items-center justify-between">
-            <h3 class="text-lg font-bold text-slate-900">✍️ Input Absensi Manual</h3>
-            <button type="button" onclick="document.getElementById('manual-modal').classList.add('hidden')"
-                    class="text-slate-400 hover:text-slate-600 text-lg font-bold">
-                ✕
-            </button>
+<!-- Manual Attendance Modal -->
+<div id="manual-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 class="text-sm font-bold text-slate-900">Input Manual Attendance Log</h3>
+            <button type="button" onclick="document.getElementById('manual-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
         </div>
 
-        <form method="POST" action="{{ route('admin.absensi.manual') }}" class="space-y-4">
+        <form method="POST" action="{{ route('admin.absensi.manual') }}" class="space-y-4 text-xs">
             @csrf
-
             <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Pilih Pegawai <span class="text-rose-500">*</span></label>
-                <select name="pegawai_id" required class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                <label for="modal_pegawai_id" class="block font-semibold text-slate-700 mb-1">Employee</label>
+                <select name="pegawai_id" id="modal_pegawai_id" required class="w-full px-3 py-2 rounded-lg border border-slate-300 outline-none">
                     @foreach($pegawais as $p)
                         <option value="{{ $p->id }}">{{ $p->nama }} ({{ $p->email }})</option>
                     @endforeach
@@ -229,46 +179,25 @@
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tanggal Absensi <span class="text-rose-500">*</span></label>
-                <input type="date" name="tanggal" value="{{ date('Y-m-d') }}" required
-                       class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                <label for="modal_tanggal" class="block font-semibold text-slate-700 mb-1">Date</label>
+                <input type="date" name="tanggal" id="modal_tanggal" value="{{ date('Y-m-d') }}" required
+                       class="w-full px-3 py-2 rounded-lg border border-slate-300 outline-none">
             </div>
 
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Jam Masuk (HH:MM)</label>
-                    <input type="time" name="jam_masuk" value="08:00"
-                           class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <label for="modal_jam_masuk" class="block font-semibold text-slate-700 mb-1">Clock-In (HH:MM)</label>
+                    <input type="time" name="jam_masuk" id="modal_jam_masuk" class="w-full px-3 py-2 rounded-lg border border-slate-300 outline-none">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Jam Pulang (HH:MM)</label>
-                    <input type="time" name="jam_pulang" value="17:00"
-                           class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <label for="modal_jam_pulang" class="block font-semibold text-slate-700 mb-1">Clock-Out (HH:MM)</label>
+                    <input type="time" name="jam_pulang" id="modal_jam_pulang" class="w-full px-3 py-2 rounded-lg border border-slate-300 outline-none">
                 </div>
             </div>
 
-            <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Keterangan (Opsional)</label>
-                <input type="text" name="keterangan" placeholder="Contoh: Izin / Hadir tepat waktu"
-                       class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
-            </div>
-
-            <div class="p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl flex items-center gap-2">
-                <input type="checkbox" name="sync_now" id="sync_now" value="1" checked class="h-4 w-4 rounded text-indigo-600">
-                <label for="sync_now" class="text-xs text-indigo-950 font-medium select-none">
-                    Langsung sinkronkan ke Google Sheet pegawai
-                </label>
-            </div>
-
-            <div class="flex items-center justify-end gap-2 pt-2">
-                <button type="button" onclick="document.getElementById('manual-modal').classList.add('hidden')"
-                        class="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
-                    Batal
-                </button>
-                <button type="submit"
-                        class="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition shadow-md shadow-indigo-200">
-                    Simpan Absensi
-                </button>
+            <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                <button type="button" onclick="document.getElementById('manual-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg">Cancel</button>
+                <button type="submit" class="px-5 py-2 bg-[#000d6b] hover:bg-[#001253] text-white font-bold rounded-lg shadow-sm">Save Record</button>
             </div>
         </form>
     </div>
