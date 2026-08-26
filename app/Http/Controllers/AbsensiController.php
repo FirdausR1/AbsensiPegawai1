@@ -22,7 +22,7 @@ class AbsensiController extends Controller
         $endOfMonth = Carbon::now()->endOfMonth()->toDateString();
 
         $todayAbsensi = Absensi::where('pegawai_id', $pegawai->id)
-            ->where('tanggal', $today)
+            ->whereDate('tanggal', $today)
             ->first();
 
         $recentAbsensis = Absensi::where('pegawai_id', $pegawai->id)
@@ -104,6 +104,7 @@ class AbsensiController extends Controller
         try {
             $pegawai = Auth::user();
             $now = Carbon::now();
+            $today = $now->toDateString();
 
             if (!$pegawai->hasSignature()) {
                 return back()->with('error', 'Silakan buat tanda tangan digital dulu di halaman profil sebelum absen.');
@@ -114,15 +115,23 @@ class AbsensiController extends Controller
                 return back()->with('error', 'Hari ini libur (' . $reason . '), tidak perlu absen.');
             }
 
-            $absensi = Absensi::firstOrCreate(
-                ['pegawai_id' => $pegawai->id, 'tanggal' => $now->toDateString()],
-            );
+            $absensi = Absensi::where('pegawai_id', $pegawai->id)
+                ->whereDate('tanggal', $today)
+                ->first();
 
-            if ($absensi->jam_masuk) {
+            if ($absensi && $absensi->jam_masuk) {
                 return back()->with('error', 'Kamu sudah absen masuk hari ini pukul ' . substr($absensi->jam_masuk, 0, 5) . ' WIB');
             }
 
-            $absensi->update(['jam_masuk' => $now->format('H:i:s')]);
+            if (!$absensi) {
+                Absensi::create([
+                    'pegawai_id' => $pegawai->id,
+                    'tanggal'    => $today,
+                    'jam_masuk'  => $now->format('H:i:s'),
+                ]);
+            } else {
+                $absensi->update(['jam_masuk' => $now->format('H:i:s')]);
+            }
 
             return back()->with('success', 'Absen masuk berhasil dicatat pukul ' . $now->format('H:i') . ' WIB!');
         } catch (\Throwable $e) {
@@ -136,9 +145,10 @@ class AbsensiController extends Controller
         try {
             $pegawai = Auth::user();
             $now = Carbon::now();
+            $today = $now->toDateString();
 
             $absensi = Absensi::where('pegawai_id', $pegawai->id)
-                ->where('tanggal', $now->toDateString())
+                ->whereDate('tanggal', $today)
                 ->first();
 
             if (!$absensi || !$absensi->jam_masuk) {

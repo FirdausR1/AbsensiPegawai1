@@ -81,23 +81,40 @@
                     <span class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 text-2xl">
                         ☀️
                     </span>
-                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
-                        Shift Pagi / Datang
-                    </span>
+                    @if($todayAbsensi && $todayAbsensi->jam_masuk)
+                        <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                            ✓ Masuk: {{ substr($todayAbsensi->jam_masuk, 0, 5) }} WIB
+                        </span>
+                    @else
+                        <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
+                            Shift Pagi / Datang
+                        </span>
+                    @endif
                 </div>
                 <h2 class="text-lg font-bold text-slate-800">Absen Masuk</h2>
                 <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                    Catat waktu kedatangan kerja hari ini. Jam dan tanda tangan digital Anda akan otomatis disinkronkan ke Google Sheet.
+                    @if($todayAbsensi && $todayAbsensi->jam_masuk)
+                        Kehadiran masuk Anda hari ini sudah tercatat pada pukul <strong class="text-emerald-700">{{ substr($todayAbsensi->jam_masuk, 0, 5) }} WIB</strong>.
+                    @else
+                        Catat waktu kedatangan kerja hari ini. Jam dan tanda tangan digital Anda akan otomatis tersimpan dalam sistem.
+                    @endif
                 </p>
             </div>
 
             <form method="POST" action="{{ route('absen.masuk') }}" class="mt-6">
                 @csrf
-                <button type="submit"
-                        {{ $pegawai->hasSignature() ? '' : 'disabled' }}
-                        class="w-full py-3.5 px-4 rounded-2xl font-bold text-sm shadow-md transition duration-150 flex items-center justify-center gap-2 {{ $pegawai->hasSignature() ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed' }}">
-                    <span>👉</span> Catat Absen Masuk
-                </button>
+                @if($todayAbsensi && $todayAbsensi->jam_masuk)
+                    <button type="button" disabled
+                            class="w-full py-3.5 px-4 rounded-2xl font-bold text-sm bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default flex items-center justify-center gap-2">
+                        <span>✅</span> Sudah Absen Masuk ({{ substr($todayAbsensi->jam_masuk, 0, 5) }} WIB)
+                    </button>
+                @else
+                    <button type="submit"
+                            {{ $pegawai->hasSignature() ? '' : 'disabled' }}
+                            class="w-full py-3.5 px-4 rounded-2xl font-bold text-sm shadow-md transition duration-150 flex items-center justify-center gap-2 {{ $pegawai->hasSignature() ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed' }}">
+                        <span>👉</span> Catat Absen Masuk
+                    </button>
+                @endif
             </form>
         </div>
 
@@ -108,23 +125,51 @@
                     <span class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-slate-100 text-slate-700 text-2xl">
                         🌙
                     </span>
-                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
-                        Selesai Kerja
-                    </span>
+                    @if($todayAbsensi && $todayAbsensi->jam_pulang)
+                        <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800 flex items-center gap-1">
+                            ✓ Pulang: {{ substr($todayAbsensi->jam_pulang, 0, 5) }} WIB
+                        </span>
+                    @elseif($todayAbsensi && $todayAbsensi->jam_masuk)
+                        <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800">
+                            Siap Absen Pulang
+                        </span>
+                    @else
+                        <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
+                            Selesai Kerja
+                        </span>
+                    @endif
                 </div>
                 <h2 class="text-lg font-bold text-slate-800">Absen Pulang</h2>
                 <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                    Catat waktu selesai kerja hari ini. Pastikan Anda sudah mencatat absen masuk terlebih dahulu sebelum absen pulang.
+                    @if($todayAbsensi && $todayAbsensi->jam_pulang)
+                        Absensi pulang hari ini sudah tercatat pada pukul <strong class="text-indigo-700">{{ substr($todayAbsensi->jam_pulang, 0, 5) }} WIB</strong>.
+                    @elseif($todayAbsensi && $todayAbsensi->jam_masuk)
+                        Anda sudah absen masuk. Silakan klik tombol di bawah saat jam kerja Anda selesai hari ini.
+                    @else
+                        Catat waktu selesai kerja hari ini. Pastikan Anda sudah mencatat absen masuk terlebih dahulu sebelum absen pulang.
+                    @endif
                 </p>
             </div>
 
             <form method="POST" action="{{ route('absen.pulang') }}" class="mt-6">
                 @csrf
-                <button type="submit"
-                        {{ $pegawai->hasSignature() ? '' : 'disabled' }}
-                        class="w-full py-3.5 px-4 rounded-2xl font-bold text-sm shadow-md transition duration-150 flex items-center justify-center gap-2 {{ $pegawai->hasSignature() ? 'bg-slate-800 hover:bg-slate-900 text-white shadow-slate-300' : 'bg-slate-100 text-slate-400 cursor-not-allowed' }}">
-                    <span>🏠</span> Catat Absen Pulang
-                </button>
+                @if($todayAbsensi && $todayAbsensi->jam_pulang)
+                    <button type="button" disabled
+                            class="w-full py-3.5 px-4 rounded-2xl font-bold text-sm bg-slate-100 text-slate-600 border border-slate-200 cursor-default flex items-center justify-center gap-2">
+                        <span>✅</span> Sudah Absen Pulang ({{ substr($todayAbsensi->jam_pulang, 0, 5) }} WIB)
+                    </button>
+                @elseif($todayAbsensi && $todayAbsensi->jam_masuk)
+                    <button type="submit"
+                            {{ $pegawai->hasSignature() ? '' : 'disabled' }}
+                            class="w-full py-3.5 px-4 rounded-2xl font-bold text-sm shadow-md transition duration-150 flex items-center justify-center gap-2 {{ $pegawai->hasSignature() ? 'bg-slate-900 hover:bg-black text-white shadow-slate-300 ring-2 ring-indigo-500' : 'bg-slate-100 text-slate-400 cursor-not-allowed' }}">
+                        <span>🏠</span> Catat Absen Pulang
+                    </button>
+                @else
+                    <button type="button" disabled
+                            class="w-full py-3.5 px-4 rounded-2xl font-bold text-sm bg-slate-100 text-slate-400 cursor-not-allowed flex items-center justify-center gap-2">
+                        <span>🏠</span> Catat Absen Pulang
+                    </button>
+                @endif
             </form>
         </div>
     </div>
