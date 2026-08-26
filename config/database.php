@@ -32,10 +32,30 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA', file_exists('/etc/ssl/certs/ca-certificates.crt') ? '/etc/ssl/certs/ca-certificates.crt' : null),
-                PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => env('MYSQL_ATTR_SSL_VERIFY_SERVER_CERT', false),
+                PDO::MYSQL_ATTR_SSL_CA => (function () {
+                    // If explicitly set in .env, use it
+                    if (env('MYSQL_ATTR_SSL_CA')) {
+                        return env('MYSQL_ATTR_SSL_CA');
+                    }
+                    // Auto-detect common SSL CA paths (Linux/Render/Ubuntu/Alpine)
+                    $caPaths = [
+                        '/etc/ssl/certs/ca-certificates.crt',  // Debian/Ubuntu (Render)
+                        '/etc/pki/tls/certs/ca-bundle.crt',    // CentOS/RHEL
+                        '/etc/ssl/ca-bundle.pem',              // OpenSUSE
+                        '/usr/local/share/certs/ca-root-nss.crt', // FreeBSD
+                        storage_path('isrg-root-x1.pem'),      // Local Windows fallback
+                    ];
+                    foreach ($caPaths as $path) {
+                        if (file_exists($path)) {
+                            return $path;
+                        }
+                    }
+                    return null;
+                })(),
+                PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
             ], fn($val) => $val !== null) : [],
         ],
+
 
         'pgsql' => [
             'driver' => 'pgsql',
