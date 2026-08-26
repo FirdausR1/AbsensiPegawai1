@@ -1,140 +1,138 @@
 @extends('layouts.app')
 
-@section('title', 'All Attendance - PT Inti Sarana Wijaya')
+@section('title', 'Attendance Management - PT Inti Sarana Wijaya')
 
 @section('content')
 <div class="space-y-6">
     <!-- Header & Navigation -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <div class="flex items-center gap-2 text-xs font-semibold text-slate-400 mb-1">
-                <a href="{{ route('dashboard') }}" class="hover:text-[#000d6b] transition">Dashboard</a>
-                <span>/</span>
-                <span class="text-slate-500">Admin</span>
-                <span>/</span>
-                <span class="text-slate-800 font-bold">Attendance Records</span>
-            </div>
-            <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Organization Attendance Records</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Real-time attendance tracking, filtering, manual log input, and bulk export.</p>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-[#000d6b] tracking-tight">Attendance Management</h1>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">Real-time attendance tracking, filtering, manual log input, and bulk export.</p>
         </div>
 
         <!-- Action Buttons -->
         <div class="flex items-center gap-2 flex-wrap">
             <button type="button" onclick="document.getElementById('manual-modal').classList.remove('hidden')"
-                    class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg transition shadow-sm">
-                <span>➕</span> Input Manual Log
+                    class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs sm:text-sm font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg transition shadow-sm">
+                <span>+</span> Input Manual Log
             </button>
 
             <a href="{{ route('admin.export.semua', now()->format('Y-m')) }}"
-               class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#000d6b] hover:bg-[#001253] rounded-lg transition shadow-sm">
+               class="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-[#000d6b] hover:bg-[#001253] rounded-lg shadow-sm transition tracking-wide">
                 <span>📥</span> Export All (.zip)
             </a>
         </div>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-            <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Logged Today</div>
-            <div class="text-2xl font-extrabold text-slate-900 mt-1">{{ $stats['total_today'] }}</div>
-        </div>
-        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-            <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Clock-Ins Today</div>
-            <div class="text-2xl font-extrabold text-emerald-700 mt-1">{{ $stats['masuk_today'] }}</div>
-        </div>
-        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-            <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Clock-Outs Today</div>
-            <div class="text-2xl font-extrabold text-[#000d6b] mt-1">{{ $stats['pulang_today'] }}</div>
-        </div>
-    </div>
-
-    <!-- Filter Card -->
-    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-        <form method="GET" action="{{ route('admin.absensi.index') }}" class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
-            <div>
-                <label for="date" class="block font-semibold text-slate-600 mb-1">Filter by Date</label>
+    <!-- Search & Filter Card Box -->
+    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+        <form method="GET" action="{{ route('admin.absensi.index') }}" class="grid grid-cols-1 sm:grid-cols-12 gap-3 text-xs sm:text-sm">
+            <div class="sm:col-span-4">
+                <label for="date" class="block font-semibold text-slate-600 mb-1 text-xs">Filter by Date</label>
                 <input type="date" name="date" id="date" value="{{ request('date') }}"
-                       class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none">
+                       class="w-full px-3.5 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 bg-white font-medium text-xs sm:text-sm">
             </div>
 
-            <div>
-                <label for="pegawai_id" class="block font-semibold text-slate-600 mb-1">Filter by Employee</label>
-                <select name="pegawai_id" id="pegawai_id" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none">
+            <div class="sm:col-span-5">
+                <label for="pegawai_id" class="block font-semibold text-slate-600 mb-1 text-xs">Filter by Employee</label>
+                <select name="pegawai_id" id="pegawai_id" class="w-full px-3.5 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-700 bg-white font-medium text-xs sm:text-sm">
                     <option value="">All Employees</option>
                     @foreach($pegawais as $p)
                         <option value="{{ $p->id }}" {{ request('pegawai_id') == $p->id ? 'selected' : '' }}>
-                            {{ $p->nama }}
+                            {{ $p->nama }} ({{ $p->area_kerja ?: 'Staff' }})
                         </option>
                     @endforeach
                 </select>
             </div>
 
-            <div class="sm:col-span-2 flex items-end gap-2">
-                <button type="submit" class="px-4 py-2 bg-[#000d6b] hover:bg-[#001253] text-white font-bold rounded-lg shadow-sm transition">
+            <div class="sm:col-span-3 flex items-end gap-2">
+                <button type="submit" class="flex-1 py-2 px-3 bg-[#000d6b] hover:bg-[#001253] text-white text-xs font-bold rounded-lg transition">
                     Apply Filter
                 </button>
-                <a href="{{ route('admin.absensi.index') }}" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition">
+                <a href="{{ route('admin.absensi.index') }}" class="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition">
                     Reset
                 </a>
             </div>
         </form>
     </div>
 
-    <!-- Attendance Table -->
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-6">
-        <div class="flex items-center gap-2 mb-4">
-            <span class="section-bar"></span>
-            <h3 class="text-sm font-bold text-slate-900">Attendance Log</h3>
-        </div>
-
+    <!-- Corporate Styled Attendance Table Container -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
+            <table class="w-full text-left text-xs sm:text-sm">
+                <!-- Navy Solid Table Header -->
                 <thead>
-                    <tr class="bg-slate-50 text-slate-500 border-b border-slate-200">
-                        <th class="py-3 px-4 font-semibold">Date</th>
-                        <th class="py-3 px-4 font-semibold">Employee</th>
-                        <th class="py-3 px-4 font-semibold">Clock-In</th>
-                        <th class="py-3 px-4 font-semibold">Clock-Out</th>
-                        <th class="py-3 px-4 font-semibold">Status</th>
-                        <th class="py-3 px-4 font-semibold text-right">Actions</th>
+                    <tr class="bg-[#000d6b] text-white">
+                        <th class="py-3.5 px-5 font-bold tracking-wider">Employee</th>
+                        <th class="py-3.5 px-5 font-bold tracking-wider">Date</th>
+                        <th class="py-3.5 px-5 font-bold tracking-wider">Clock-In</th>
+                        <th class="py-3.5 px-5 font-bold tracking-wider">Clock-Out</th>
+                        <th class="py-3.5 px-5 font-bold tracking-wider">Status</th>
+                        <th class="py-3.5 px-5 font-bold tracking-wider text-right">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody class="divide-y divide-slate-200 bg-white text-slate-700">
                     @forelse($absensis as $item)
-                        <tr class="hover:bg-slate-50/70 transition">
-                            <td class="py-3 px-4 font-bold text-slate-800">
+                        @php
+                            $nama = $item->pegawai->nama ?? 'Unknown';
+                            $words = explode(' ', trim($nama));
+                            $initials = count($words) >= 2 
+                                ? strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1))
+                                : strtoupper(substr($nama, 0, 2));
+                        @endphp
+                        <tr class="hover:bg-slate-50/80 transition">
+                            <!-- Employee Column with Initials Badge -->
+                            <td class="py-4 px-5">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-full bg-[#e2e8f0] text-[#1e3a8a] font-bold flex items-center justify-center text-xs shrink-0 border border-slate-300/60">
+                                        {{ $initials }}
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-slate-900 text-xs sm:text-sm">{{ $nama }}</div>
+                                        <div class="text-[11px] text-slate-400 font-normal">{{ $item->pegawai->area_kerja ?? 'General' }}</div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Date Column -->
+                            <td class="py-4 px-5 font-medium text-slate-800">
                                 {{ \Carbon\Carbon::parse($item->tanggal)->translatedFormat('d M Y') }}
                             </td>
-                            <td class="py-3 px-4">
-                                <div class="font-bold text-slate-900">{{ $item->pegawai->nama ?? 'Unknown' }}</div>
-                                <div class="text-[10px] text-slate-400">{{ $item->pegawai->area_kerja ?? 'General' }}</div>
-                            </td>
-                            <td class="py-3 px-4 font-bold text-emerald-700">
+
+                            <!-- Clock-In Column -->
+                            <td class="py-4 px-5 font-bold text-emerald-700">
                                 {{ $item->jam_masuk ? substr($item->jam_masuk, 0, 5) . ' WIB' : '-' }}
                             </td>
-                            <td class="py-3 px-4 font-bold text-[#000d6b]">
+
+                            <!-- Clock-Out Column -->
+                            <td class="py-4 px-5 font-bold text-[#000d6b]">
                                 {{ $item->jam_pulang ? substr($item->jam_pulang, 0, 5) . ' WIB' : '-' }}
                             </td>
-                            <td class="py-3 px-4">
+
+                            <!-- Status Badge Column -->
+                            <td class="py-4 px-5">
                                 @if($item->jam_masuk && $item->jam_pulang)
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                                        Complete
+                                    <span class="inline-block px-2.5 py-1 rounded text-[10px] font-extrabold bg-[#e6f4ea] text-[#137333] tracking-wider uppercase">
+                                        ACTIVE / COMPLETE
                                     </span>
                                 @elseif($item->jam_masuk)
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                                        No Clock-out
+                                    <span class="inline-block px-2.5 py-1 rounded text-[10px] font-extrabold bg-amber-50 text-amber-800 tracking-wider uppercase border border-amber-200">
+                                        IN PROGRESS
                                     </span>
                                 @else
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600">
-                                        -
+                                    <span class="inline-block px-2.5 py-1 rounded text-[10px] font-extrabold bg-[#fce8e6] text-[#c5221f] tracking-wider uppercase">
+                                        ABSENT
                                     </span>
                                 @endif
                             </td>
-                            <td class="py-3 px-4 text-right">
+
+                            <!-- Actions Column -->
+                            <td class="py-4 px-5 text-right space-x-2 whitespace-nowrap">
                                 <form method="POST" action="{{ route('admin.absensi.destroy', $item->id) }}" class="inline" onsubmit="return confirm('Delete this attendance record?');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="px-2.5 py-1 text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 font-bold rounded-md transition text-[11px]">
+                                    <button type="submit" class="px-3 py-1.5 text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 rounded-md transition inline-block">
                                         Delete
                                     </button>
                                 </form>
@@ -142,8 +140,8 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="py-8 text-center text-slate-400">
-                                No attendance records found.
+                            <td colspan="6" class="py-12 text-center text-slate-400">
+                                No attendance records found matching the criteria.
                             </td>
                         </tr>
                     @endforelse
@@ -151,11 +149,22 @@
             </table>
         </div>
 
-        @if($absensis->hasPages())
-            <div class="mt-4 pt-3 border-t border-slate-100">
-                {{ $absensis->links() }}
+        <!-- Table Footer Pagination Bar -->
+        <div class="px-5 py-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-slate-500">
+            <div>
+                @if(method_exists($absensis, 'firstItem') && $absensis->total() > 0)
+                    Showing {{ $absensis->firstItem() }}-{{ $absensis->lastItem() }} of {{ $absensis->total() }} records
+                @else
+                    Showing {{ count($absensis) }} of {{ count($absensis) }} records
+                @endif
             </div>
-        @endif
+
+            @if(method_exists($absensis, 'hasPages') && $absensis->hasPages())
+                <div>
+                    {{ $absensis->links() }}
+                </div>
+            @endif
+        </div>
     </div>
 </div>
 

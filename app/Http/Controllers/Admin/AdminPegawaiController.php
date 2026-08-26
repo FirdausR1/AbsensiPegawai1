@@ -25,6 +25,10 @@ class AdminPegawaiController extends Controller
             });
         }
 
+        if ($department = $request->input('department')) {
+            $query->where('area_kerja', $department);
+        }
+
         $pegawais = $query->orderBy('nama', 'asc')->paginate(15)->withQueryString();
 
         $stats = [
