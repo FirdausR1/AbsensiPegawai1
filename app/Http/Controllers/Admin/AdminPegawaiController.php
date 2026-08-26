@@ -23,14 +23,11 @@ class AdminPegawaiController extends Controller
             $divisiId = $currentUser->divisi_id;
             $area = $currentUser->area_kerja;
 
-            $query->where(function ($q) use ($divisiId, $area) {
-                if ($divisiId) {
-                    $q->where('divisi_id', $divisiId);
-                }
-                if ($area) {
-                    $q->orWhere('area_kerja', 'like', "%{$area}%");
-                }
-            });
+            if ($divisiId) {
+                $query->where('divisi_id', $divisiId);
+            } elseif ($area) {
+                $query->where('area_kerja', 'like', "%{$area}%");
+            }
         }
 
         if ($search = $request->input('search')) {
@@ -50,14 +47,11 @@ class AdminPegawaiController extends Controller
 
         $statsQuery = Pegawai::query();
         if ($currentUser->isDivisionAdmin()) {
-            $statsQuery->where(function ($q) use ($currentUser) {
-                if ($currentUser->divisi_id) {
-                    $q->where('divisi_id', $currentUser->divisi_id);
-                }
-                if ($currentUser->area_kerja) {
-                    $q->orWhere('area_kerja', 'like', "%{$currentUser->area_kerja}%");
-                }
-            });
+            if ($currentUser->divisi_id) {
+                $statsQuery->where('divisi_id', $currentUser->divisi_id);
+            } elseif ($currentUser->area_kerja) {
+                $statsQuery->where('area_kerja', 'like', "%{$currentUser->area_kerja}%");
+            }
         }
 
         $stats = [

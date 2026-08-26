@@ -47,14 +47,20 @@
         <!-- Filter Divisi / Department / Area -->
         <form method="GET" action="{{ route('admin.jadwal-shift.index') }}" class="flex flex-wrap items-center gap-2">
             <input type="hidden" name="bulan" value="{{ $bulan }}">
+            <select name="divisi_id" class="px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-xs bg-white">
+                <option value="">Semua Divisi</option>
+                @foreach($divisis as $divisi)
+                    <option value="{{ $divisi->id }}" {{ (string) request('divisi_id') === (string) $divisi->id ? 'selected' : '' }}>{{ $divisi->nama }}</option>
+                @endforeach
+            </select>
             <select name="area" class="px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-xs bg-white">
-                <option value="">Semua Divisi / Area</option>
+                <option value="">Semua Area</option>
                 @foreach($areas as $area)
                     <option value="{{ $area }}" {{ request('area') === $area ? 'selected' : '' }}>{{ $area }}</option>
                 @endforeach
             </select>
             <button type="submit" class="px-3.5 py-2 bg-[#000d6b] text-white text-xs font-bold rounded-lg shadow-sm">Filter</button>
-            @if(request('area'))
+            @if(request('area') || request('divisi_id'))
                 <a href="{{ route('admin.jadwal-shift.index', ['bulan' => $bulan]) }}" class="px-3 py-2 bg-slate-100 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-200">Reset</a>
             @endif
         </form>

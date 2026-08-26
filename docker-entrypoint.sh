@@ -30,9 +30,9 @@ php artisan view:cache || true
 # Run database migrations and seeders
 if [ "$DB_CONNECTION" = "sqlite" ] || [ -n "$DB_HOST" ] || [ -z "$DB_CONNECTION" ]; then
     echo "Running database migrations..."
-    php artisan migrate --force || true
+    php artisan migrate --force
     echo "Running database seeders..."
-    php artisan db:seed --force || true
+    php artisan db:seed --force
 fi
 
 # Set proper ownership and permissions so www-data can write SQLite and storage files

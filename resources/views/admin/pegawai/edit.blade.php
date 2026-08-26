@@ -120,7 +120,7 @@
                 <select name="divisi_id" id="divisi_id" required
                         class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-sm bg-white font-medium">
                     @foreach($divisis as $div)
-                        <option value="{{ $div->id }}" {{ (old('divisi_id', $pegawai->divisi_id) == $div->id || $pegawai->area_kerja == $div->nama) ? 'selected' : '' }}>
+                        <option value="{{ $div->id }}" {{ old('divisi_id', $pegawai->divisi_id) == $div->id ? 'selected' : '' }}>
                             {{ $div->nama }} ({{ substr($div->jam_masuk, 0, 5) }} - {{ substr($div->jam_pulang, 0, 5) }})
                         </option>
                     @endforeach

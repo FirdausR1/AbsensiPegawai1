@@ -27,7 +27,6 @@ Route::middleware('auth')->group(function () {
 
     // Jadwal Shift (Employee view)
     Route::get('/jadwal-shift', [JadwalShiftController::class, 'index'])->name('jadwal-shift.index');
-    Route::post('/jadwal-shift/request', [JadwalShiftController::class, 'requestGanti'])->name('jadwal-shift.request');
 
     // Pengajuan Cuti (Employee)
     Route::get('/cuti', [CutiController::class, 'index'])->name('cuti.index');
@@ -84,8 +83,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/jadwal-shift', [\App\Http\Controllers\Admin\AdminJadwalShiftController::class, 'store'])->name('jadwal-shift.store');
         Route::post('/jadwal-shift/bulk', [\App\Http\Controllers\Admin\AdminJadwalShiftController::class, 'storeBulk'])->name('jadwal-shift.bulk');
         Route::post('/jadwal-shift/destroy', [\App\Http\Controllers\Admin\AdminJadwalShiftController::class, 'destroy'])->name('jadwal-shift.destroy');
-        Route::get('/jadwal-shift/requests', [\App\Http\Controllers\Admin\AdminJadwalShiftController::class, 'requests'])->name('jadwal-shift.requests');
-        Route::post('/jadwal-shift/{jadwalShift}/approve', [\App\Http\Controllers\Admin\AdminJadwalShiftController::class, 'approveRequest'])->name('jadwal-shift.approve');
 
         // Export Excel (Admin)
         Route::get('/export/{pegawai}/{bulan?}', [ExportController::class, 'exportPegawai'])->name('export.pegawai');

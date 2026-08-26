@@ -25,17 +25,13 @@ class AdminJadwalShiftController extends Controller
             ->orderBy('nama');
 
         if ($currentUser->isDivisionAdmin()) {
-            $pegawaiQuery->where(function ($q) use ($currentUser) {
-                if ($currentUser->divisi_id) {
-                    $q->where('divisi_id', $currentUser->divisi_id);
-                }
-                if ($currentUser->area_kerja) {
-                    $q->orWhere('area_kerja', 'like', '%' . $currentUser->area_kerja . '%');
-                }
-            });
+            $pegawaiQuery->where('divisi_id', $currentUser->divisi_id);
         }
 
-        // Filter by area/divisi
+        if ($divisiId = $request->input('divisi_id')) {
+            $pegawaiQuery->where('divisi_id', $divisiId);
+        }
+
         if ($area = $request->input('area')) {
             $pegawaiQuery->where('area_kerja', 'like', "%{$area}%");
         }
@@ -133,6 +129,9 @@ class AdminJadwalShiftController extends Controller
 
         $currentUser = Auth::user();
         $targetPegawai = Pegawai::with('divisi')->find($request->pegawai_id);
+        if ($currentUser->isDivisionAdmin() && $targetPegawai->divisi_id !== $currentUser->divisi_id) {
+            abort(403, 'Akses ditolak. Pegawai bukan bagian dari divisi Anda.');
+        }
         $jam = JadwalShift::defaultJam($request->tipe_shift, $targetPegawai);
 
         $start = Carbon::parse($request->tanggal_dari);
@@ -172,41 +171,17 @@ class AdminJadwalShiftController extends Controller
             'tanggal'    => ['required', 'date'],
         ]);
 
-        JadwalShift::where('pegawai_id', $request->pegawai_id)
+        $currentUser = Auth::user();
+        $targetPegawai = Pegawai::findOrFail($request->pegawai_id);
+        if ($currentUser->isDivisionAdmin() && $targetPegawai->divisi_id !== $currentUser->divisi_id) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        JadwalShift::where('pegawai_id', $targetPegawai->id)
             ->whereDate('tanggal', $request->tanggal)
             ->delete();
 
         return response()->json(['success' => true]);
     }
 
-    /**
-     * Approve request tukar shift dari satpam
-     */
-    public function approveRequest(JadwalShift $jadwalShift)
-    {
-        $jadwalShift->update(['status' => 'confirmed']);
-        return back()->with('success', 'Request shift disetujui.');
-    }
-
-    /**
-     * Lihat semua request yang pending (dari satpam)
-     */
-    public function requests(Request $request)
-    {
-        $currentUser = Auth::user();
-
-        $query = JadwalShift::with('pegawai.divisi')
-            ->where('status', 'requested')
-            ->orderBy('tanggal');
-
-        if ($currentUser->isDivisionAdmin()) {
-            $query->whereHas('pegawai', function ($q) use ($currentUser) {
-                $q->where('divisi_id', $currentUser->divisi_id);
-            });
-        }
-
-        $requests = $query->paginate(20);
-
-        return view('admin.jadwal-shift.requests', compact('requests', 'currentUser'));
-    }
 }
