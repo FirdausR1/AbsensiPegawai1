@@ -14,9 +14,9 @@
                 <span>/</span>
                 <span class="text-slate-800 font-bold">Division Schedules</span>
             </div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-[#000d6b] tracking-tight">Division Working Hours & Shifts</h1>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-[#000d6b] tracking-tight">Shift & Jadwal Kerja Divisi</h1>
             <p class="text-xs sm:text-sm text-slate-500 mt-1">
-                Atur jadwal jam masuk, jam pulang, dan batas toleransi keterlambatan untuk setiap divisi (Cleaning Service, Satpam, IT, Staff, dll).
+                Atur jadwal jam kerja, toleransi keterlambatan, dan ketentuan hari kerja (5 hari kantor, 6 hari operasional, atau shift 7 hari Satpam/CS).
             </p>
         </div>
 
@@ -34,10 +34,10 @@
                 <thead>
                     <tr class="bg-[#000d6b] text-white">
                         <th class="py-3.5 px-5 font-bold tracking-wider">Nama Divisi / Shift</th>
-                        <th class="py-3.5 px-5 font-bold tracking-wider">Jam Masuk</th>
-                        <th class="py-3.5 px-5 font-bold tracking-wider">Jam Pulang</th>
-                        <th class="py-3.5 px-5 font-bold tracking-wider">Toleransi Terlambat</th>
-                        <th class="py-3.5 px-5 font-bold tracking-wider">Total Pegawai</th>
+                        <th class="py-3.5 px-5 font-bold tracking-wider">Jam Masuk - Pulang</th>
+                        <th class="py-3.5 px-5 font-bold tracking-wider">Tipe Hari Kerja</th>
+                        <th class="py-3.5 px-5 font-bold tracking-wider">Toleransi</th>
+                        <th class="py-3.5 px-5 font-bold tracking-wider">Pegawai</th>
                         <th class="py-3.5 px-5 font-bold tracking-wider text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -50,32 +50,47 @@
                                 <div class="text-[11px] text-slate-400 font-normal">{{ $item->keterangan ?: 'Tidak ada keterangan khusus' }}</div>
                             </td>
 
-                            <!-- Jam Masuk -->
-                            <td class="py-4 px-5 font-bold text-emerald-700">
-                                {{ substr($item->jam_masuk, 0, 5) }} WIB
+                            <!-- Jam Kerja -->
+                            <td class="py-4 px-5">
+                                <div class="font-bold text-slate-900">
+                                    <span class="text-emerald-700">{{ substr($item->jam_masuk, 0, 5) }}</span>
+                                    <span class="text-slate-400"> - </span>
+                                    <span class="text-[#000d6b]">{{ substr($item->jam_pulang, 0, 5) }}</span>
+                                    <span class="text-[11px] text-slate-400 font-normal">WIB</span>
+                                </div>
                             </td>
 
-                            <!-- Jam Pulang -->
-                            <td class="py-4 px-5 font-bold text-[#000d6b]">
-                                {{ substr($item->jam_pulang, 0, 5) }} WIB
+                            <!-- Tipe Hari Kerja -->
+                            <td class="py-4 px-5">
+                                @if($item->hari_kerja_tipe === '7_hari')
+                                    <span class="inline-block px-2.5 py-1 rounded text-[10px] font-bold bg-[#eef2ff] text-[#000d6b] border border-indigo-100">
+                                        Shift 7 Hari (Termasuk Libur/Weekend)
+                                    </span>
+                                @elseif($item->hari_kerja_tipe === '6_hari')
+                                    <span class="inline-block px-2.5 py-1 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                        Senin - Sabtu (6 Hari Kerja)
+                                    </span>
+                                @else
+                                    <span class="inline-block px-2.5 py-1 rounded text-[10px] font-semibold bg-slate-100 text-slate-700">
+                                        Senin - Jumat (5 Hari Kantor)
+                                    </span>
+                                @endif
                             </td>
 
                             <!-- Toleransi -->
                             <td class="py-4 px-5 font-medium">
                                 @if($item->toleransi_menit > 0)
-                                    <span class="inline-block px-2.5 py-1 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
                                         +{{ $item->toleransi_menit }} Menit
                                     </span>
                                 @else
-                                    <span class="inline-block px-2.5 py-1 rounded text-[10px] font-bold bg-slate-100 text-slate-600">
-                                        Tepat Waktu (0 mnt)
-                                    </span>
+                                    <span class="text-slate-400 text-xs">0 Menit</span>
                                 @endif
                             </td>
 
                             <!-- Total Pegawai -->
                             <td class="py-4 px-5 font-semibold text-slate-800">
-                                <span class="inline-block px-2.5 py-1 rounded text-[10px] font-extrabold bg-[#eef2ff] text-[#000d6b]">
+                                <span class="inline-block px-2.5 py-1 rounded text-[10px] font-extrabold bg-slate-100 text-slate-800">
                                     {{ $item->pegawais_count }} Pegawai
                                 </span>
                             </td>
@@ -88,7 +103,7 @@
                                     Edit
                                 </button>
 
-                                <form method="POST" action="{{ route('admin.divisi.destroy', $item->id) }}" class="inline" onsubmit="return confirm('Hapus divisi {{ $item->nama }}? Pegawai pada divisi ini akan dipindahkan ke jadwal default.');">
+                                <form method="POST" action="{{ route('admin.divisi.destroy', $item->id) }}" class="inline" onsubmit="return confirm('Hapus divisi {{ $item->nama }}?');">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="px-3 py-1.5 text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 rounded-md transition inline-block">
@@ -122,33 +137,43 @@
             @csrf
             <div>
                 <label for="nama" class="block font-semibold text-slate-700 mb-1">Nama Divisi / Shift <span class="text-rose-500">*</span></label>
-                <input type="text" name="nama" id="nama" required placeholder="Contoh: Cleaning Service / Satpam / Operasional"
-                       class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-xs sm:text-sm">
+                <input type="text" name="nama" id="nama" required placeholder="Contoh: Satpam / Security / Cleaning Service"
+                       class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-xs sm:text-sm font-medium">
             </div>
 
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label for="jam_masuk" class="block font-semibold text-slate-700 mb-1">Jam Masuk (Target) <span class="text-rose-500">*</span></label>
+                    <label for="jam_masuk" class="block font-semibold text-slate-700 mb-1">Jam Masuk Target <span class="text-rose-500">*</span></label>
                     <input type="time" name="jam_masuk" id="jam_masuk" value="08:00" required
                            class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-xs sm:text-sm font-bold">
                 </div>
                 <div>
-                    <label for="jam_pulang" class="block font-semibold text-slate-700 mb-1">Jam Pulang (Target) <span class="text-rose-500">*</span></label>
+                    <label for="jam_pulang" class="block font-semibold text-slate-700 mb-1">Jam Pulang Target <span class="text-rose-500">*</span></label>
                     <input type="time" name="jam_pulang" id="jam_pulang" value="17:00" required
                            class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-xs sm:text-sm font-bold">
                 </div>
             </div>
 
             <div>
+                <label for="hari_kerja_tipe" class="block font-semibold text-slate-700 mb-1">Ketentuan Hari Kerja & Libur <span class="text-rose-500">*</span></label>
+                <select name="hari_kerja_tipe" id="hari_kerja_tipe" required
+                        class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 font-medium">
+                    <option value="5_hari">Senin - Jumat (5 Hari Kerja, Weekend & Libur Nasional = Libur)</option>
+                    <option value="6_hari">Senin - Sabtu (6 Hari Kerja, Minggu = Libur)</option>
+                    <option value="7_hari">Setiap Hari / Shift 7 Hari (Satpam/CS: Termasuk Sabtu, Minggu, & Libur Nasional)</option>
+                </select>
+                <p class="text-[11px] text-slate-400 mt-1">Pilih <strong>Shift 7 Hari</strong> untuk Satpam/Security agar absen di hari Sabtu, Minggu, dan Libur Nasional otomatis tercatat sebagai kehadiran aktif.</p>
+            </div>
+
+            <div>
                 <label for="toleransi_menit" class="block font-semibold text-slate-700 mb-1">Toleransi Keterlambatan (Menit) <span class="text-rose-500">*</span></label>
                 <input type="number" name="toleransi_menit" id="toleransi_menit" value="15" min="0" max="120" required
                        class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-xs sm:text-sm font-medium">
-                <p class="text-[11px] text-slate-400 mt-1">Jika pegawai absen setelah jam masuk + toleransi, sistem akan menghitung menit keterlambatan.</p>
             </div>
 
             <div>
                 <label for="keterangan" class="block font-semibold text-slate-700 mb-1">Keterangan Tambahan</label>
-                <textarea name="keterangan" id="keterangan" rows="2" placeholder="Catatan jam kerja divisi..."
+                <textarea name="keterangan" id="keterangan" rows="2" placeholder="Catatan shift divisi..."
                           class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-xs sm:text-sm"></textarea>
             </div>
 
@@ -174,7 +199,7 @@
             <div>
                 <label for="edit_nama" class="block font-semibold text-slate-700 mb-1">Nama Divisi / Shift <span class="text-rose-500">*</span></label>
                 <input type="text" name="nama" id="edit_nama" required
-                       class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-xs sm:text-sm">
+                       class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-xs sm:text-sm font-medium">
             </div>
 
             <div class="grid grid-cols-2 gap-3">
@@ -188,6 +213,16 @@
                     <input type="time" name="jam_pulang" id="edit_jam_pulang" required
                            class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-xs sm:text-sm font-bold">
                 </div>
+            </div>
+
+            <div>
+                <label for="edit_hari_kerja_tipe" class="block font-semibold text-slate-700 mb-1">Ketentuan Hari Kerja & Libur <span class="text-rose-500">*</span></label>
+                <select name="hari_kerja_tipe" id="edit_hari_kerja_tipe" required
+                        class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 font-medium">
+                    <option value="5_hari">Senin - Jumat (5 Hari Kerja, Weekend & Libur Nasional = Libur)</option>
+                    <option value="6_hari">Senin - Sabtu (6 Hari Kerja, Minggu = Libur)</option>
+                    <option value="7_hari">Setiap Hari / Shift 7 Hari (Satpam/CS: Termasuk Sabtu, Minggu, & Libur Nasional)</option>
+                </select>
             </div>
 
             <div>
@@ -222,6 +257,7 @@
         document.getElementById('edit_nama').value = divisi.nama;
         document.getElementById('edit_jam_masuk').value = divisi.jam_masuk.substring(0, 5);
         document.getElementById('edit_jam_pulang').value = divisi.jam_pulang.substring(0, 5);
+        document.getElementById('edit_hari_kerja_tipe').value = divisi.hari_kerja_tipe || '5_hari';
         document.getElementById('edit_toleransi_menit').value = divisi.toleransi_menit || 0;
         document.getElementById('edit_keterangan').value = divisi.keterangan || '';
         document.getElementById('edit-form').action = '/admin/divisi/' + divisi.id;

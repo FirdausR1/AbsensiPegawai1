@@ -202,9 +202,10 @@ class AbsensiExportService
             $date = $carbonMonth->copy()->day($day);
             $absensi = $absensis->get($day);
 
+            $divisi = $pegawai->getDivisi();
             $isPastOrToday = $date->lte(Carbon::today());
-            $isHoliday = $holidayService->isHoliday($date);
-            $holidayName = $holidayService->getHolidayReason($date);
+            $isHoliday = $holidayService->isNationalHoliday($date);
+            $holidayName = $holidayService->reasonIfHoliday($date);
 
             // Warna baris dan Keterangan
             $rowBg = null;
@@ -213,19 +214,25 @@ class AbsensiExportService
 
             if ($absensi && !empty($absensi->keterangan)) {
                 $keterangan = $absensi->keterangan;
-            } elseif ($isHoliday) {
-                $keterangan = $holidayName ?: 'Libur Nasional';
-                $rowBg = 'ffebee'; // merah muda lembut
-            } elseif ($date->isWeekend()) {
-                $keterangan = 'Libur';
-                $rowBg = 'fff8e1'; // kuning muda
             } elseif ($absensi && $absensi->jam_masuk) {
+                // Pegawai hadir kerja (termasuk Satpam / Shift di hari libur atau akhir pekan)
                 $menitTerlambat = $absensi->getMenitTerlambat($pegawai);
                 if ($menitTerlambat > 0) {
                     $keterangan = "Terlambat {$menitTerlambat} Menit";
+                } elseif ($isHoliday || $date->isWeekend()) {
+                    $keterangan = "Hadir (Shift)";
                 } else {
                     $keterangan = "Hadir";
                 }
+            } elseif ($isHoliday && $divisi->hari_kerja_tipe !== '7_hari') {
+                $keterangan = $holidayName ?: 'Libur Nasional';
+                $rowBg = 'ffebee'; // merah muda lembut
+            } elseif ($date->isWeekend() && $divisi->hari_kerja_tipe === '5_hari') {
+                $keterangan = 'Libur';
+                $rowBg = 'fff8e1'; // kuning muda
+            } elseif ($date->isSunday() && $divisi->hari_kerja_tipe === '6_hari') {
+                $keterangan = 'Libur';
+                $rowBg = 'fff8e1';
             } elseif ($isPastOrToday) {
                 // Hari kerja yang terlewat dan tidak absen => ALPA
                 $keterangan = 'ALPA';

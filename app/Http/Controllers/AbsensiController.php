@@ -110,10 +110,11 @@ class AbsensiController extends Controller
                 return back()->with('error', 'Silakan buat tanda tangan digital dulu di halaman profil sebelum absen.');
             }
 
-            if (!$this->holidayService->isWorkingDay($now)) {
-                $reason = $this->holidayService->reasonIfHoliday($now) ?? 'Hari Libur';
-                return back()->with('error', 'Hari ini libur (' . $reason . '), tidak perlu absen.');
-            }
+            $divisi = $pegawai->getDivisi();
+            $isWajib = $divisi->isHariKerjaWajib($now, $this->holidayService);
+
+            // Jika divisi bukan 7_hari dan hari libur, tetap izinkan absen jika pegawai memang masuk (lembur/piket)
+            $isHolidayWeekend = $now->isWeekend() || $this->holidayService->isNationalHoliday($now);
 
             $absensi = Absensi::where('pegawai_id', $pegawai->id)
                 ->whereDate('tanggal', $today)

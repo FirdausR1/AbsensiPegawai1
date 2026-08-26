@@ -19,27 +19,31 @@ class AdminDivisiController extends Controller
                     'jam_masuk' => '08:00:00',
                     'jam_pulang' => '17:00:00',
                     'toleransi_menit' => 15,
-                    'keterangan' => 'Jam operasional reguler staf kantor & administrasi',
+                    'hari_kerja_tipe' => '5_hari',
+                    'keterangan' => 'Jam operasional reguler staf kantor (Senin - Jumat)',
                 ],
                 [
                     'nama' => 'Cleaning Service',
                     'jam_masuk' => '06:30:00',
                     'jam_pulang' => '15:30:00',
                     'toleransi_menit' => 10,
-                    'keterangan' => 'Shift kebersihan dan pemeliharaan gedung pagi',
+                    'hari_kerja_tipe' => '6_hari',
+                    'keterangan' => 'Shift kebersihan dan pemeliharaan gedung (Senin - Sabtu)',
                 ],
                 [
                     'nama' => 'Satpam / Security',
                     'jam_masuk' => '07:00:00',
                     'jam_pulang' => '19:00:00',
                     'toleransi_menit' => 0,
-                    'keterangan' => 'Shift keamanan dan ketertiban area gedung',
+                    'hari_kerja_tipe' => '7_hari',
+                    'keterangan' => 'Shift keamanan gedung 24/7 (Termasuk Sabtu, Minggu, & Libur Nasional)',
                 ],
                 [
                     'nama' => 'Operasional & IT',
                     'jam_masuk' => '08:30:00',
                     'jam_pulang' => '17:30:00',
                     'toleransi_menit' => 15,
+                    'hari_kerja_tipe' => '5_hari',
                     'keterangan' => 'Divisi teknologi informasi & operasional sistem',
                 ],
             ];
@@ -58,17 +62,22 @@ class AdminDivisiController extends Controller
     {
         $request->validate([
             'nama' => ['required', 'string', 'max:255', 'unique:divisis,nama'],
-            'jam_masuk' => ['required', 'date_format:H:i'],
-            'jam_pulang' => ['required', 'date_format:H:i'],
+            'jam_masuk' => ['required'],
+            'jam_pulang' => ['required'],
             'toleransi_menit' => ['required', 'integer', 'min:0', 'max:120'],
+            'hari_kerja_tipe' => ['required', 'in:5_hari,6_hari,7_hari'],
             'keterangan' => ['nullable', 'string', 'max:500'],
         ]);
 
+        $jamMasuk = strlen($request->jam_masuk) === 5 ? $request->jam_masuk . ':00' : $request->jam_masuk;
+        $jamPulang = strlen($request->jam_pulang) === 5 ? $request->jam_pulang . ':00' : $request->jam_pulang;
+
         Divisi::create([
             'nama' => $request->nama,
-            'jam_masuk' => $request->jam_masuk . ':00',
-            'jam_pulang' => $request->jam_pulang . ':00',
+            'jam_masuk' => $jamMasuk,
+            'jam_pulang' => $jamPulang,
             'toleransi_menit' => (int) $request->toleransi_menit,
+            'hari_kerja_tipe' => $request->hari_kerja_tipe,
             'keterangan' => $request->keterangan,
         ]);
 
@@ -82,6 +91,7 @@ class AdminDivisiController extends Controller
             'jam_masuk' => ['required'],
             'jam_pulang' => ['required'],
             'toleransi_menit' => ['required', 'integer', 'min:0', 'max:120'],
+            'hari_kerja_tipe' => ['required', 'in:5_hari,6_hari,7_hari'],
             'keterangan' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -93,6 +103,7 @@ class AdminDivisiController extends Controller
             'jam_masuk' => $jamMasuk,
             'jam_pulang' => $jamPulang,
             'toleransi_menit' => (int) $request->toleransi_menit,
+            'hari_kerja_tipe' => $request->hari_kerja_tipe,
             'keterangan' => $request->keterangan,
         ]);
 
@@ -101,9 +112,7 @@ class AdminDivisiController extends Controller
 
     public function destroy(Divisi $divisi)
     {
-        // Unlink pegawais before deleting
         Pegawai::where('divisi_id', $divisi->id)->update(['divisi_id' => null]);
-
         $nama = $divisi->nama;
         $divisi->delete();
 
