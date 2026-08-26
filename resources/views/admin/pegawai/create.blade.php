@@ -61,12 +61,18 @@
             </div>
 
             <div>
-                <label for="area_kerja" class="block font-semibold text-slate-700 mb-1">
-                    Department / Division
+                <label for="divisi_id" class="block font-semibold text-slate-700 mb-1">
+                    Division & Working Hours (Shift) <span class="text-rose-500">*</span>
                 </label>
-                <input type="text" name="area_kerja" id="area_kerja" value="{{ old('area_kerja') }}"
-                       class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] focus:border-[#000d6b] outline-none text-slate-800 text-sm placeholder:text-slate-400"
-                       placeholder="e.g. Information Technology / Operasional">
+                <select name="divisi_id" id="divisi_id" required
+                        class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] focus:border-[#000d6b] outline-none text-slate-800 text-sm bg-white font-medium">
+                    <option value="">-- Select Division Schedule --</option>
+                    @foreach($divisis as $div)
+                        <option value="{{ $div->id }}" {{ old('divisi_id') == $div->id ? 'selected' : '' }}>
+                            {{ $div->nama }} ({{ substr($div->jam_masuk, 0, 5) }} - {{ substr($div->jam_pulang, 0, 5) }})
+                        </option>
+                    @endforeach
+                </select>
             </div>
 
             <div>

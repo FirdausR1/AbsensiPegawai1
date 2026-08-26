@@ -44,7 +44,7 @@
     @endif
 
     <!-- Action Attendance Cards -->
-    <div id="attendance-section" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div id="attendance-section" class="scroll-mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 transition-all duration-300">
         
         <!-- Absen Masuk Card -->
         <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between hover:border-slate-300 transition">
@@ -55,12 +55,29 @@
                         <h2 class="text-base font-bold text-slate-900">Absen Masuk (Clock-In)</h2>
                     </div>
                     @if($todayAbsensi && $todayAbsensi->jam_masuk)
-                        <span class="text-xs font-bold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
-                            Masuk: {{ substr($todayAbsensi->jam_masuk, 0, 5) }} WIB
-                        </span>
+                        <div class="flex flex-col items-end gap-1">
+                            <span class="text-xs font-bold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                Masuk: {{ substr($todayAbsensi->jam_masuk, 0, 5) }} WIB
+                            </span>
+                            @php
+                                $menitTerlambat = $todayAbsensi->getMenitTerlambat();
+                            @endphp
+                            @if($menitTerlambat > 0)
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
+                                    Terlambat {{ $menitTerlambat }} Menit
+                                </span>
+                            @else
+                                <span class="text-[10px] font-bold text-emerald-700">
+                                    ✓ Tepat Waktu
+                                </span>
+                            @endif
+                        </div>
                     @else
-                        <span class="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-100 text-slate-600">
-                            Shift Pagi / Datang
+                        @php
+                            $divisi = $pegawai->getDivisi();
+                        @endphp
+                        <span class="text-xs font-semibold px-2.5 py-1 rounded-md bg-[#eef2ff] text-[#000d6b]">
+                            Shift: {{ substr($divisi->jam_masuk, 0, 5) }} - {{ substr($divisi->jam_pulang, 0, 5) }}
                         </span>
                     @endif
                 </div>
@@ -69,7 +86,7 @@
                     @if($todayAbsensi && $todayAbsensi->jam_masuk)
                         Kehadiran masuk Anda hari ini sudah tercatat pada pukul <strong class="text-emerald-700 font-bold">{{ substr($todayAbsensi->jam_masuk, 0, 5) }} WIB</strong>.
                     @else
-                        Catat waktu kedatangan kerja Anda hari ini. Jam dan tanda tangan digital Anda akan otomatis tersimpan dalam sistem.
+                        Jadwal masuk divisi <strong>{{ $pegawai->getDivisi()->nama }}</strong> adalah pukul <strong>{{ substr($pegawai->getDivisi()->jam_masuk, 0, 5) }} WIB</strong>. Jam dan tanda tangan digital Anda akan otomatis tersimpan dalam sistem.
                     @endif
                 </p>
             </div>
@@ -255,5 +272,20 @@
     }
     updateClock();
     setInterval(updateClock, 1000);
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.location.hash === '#attendance-section') {
+            const el = document.getElementById('attendance-section');
+            if (el) {
+                setTimeout(() => {
+                    el.scrollIntoView({ behavior: 'smooth' });
+                    el.classList.add('ring-2', 'ring-[#000d6b]', 'ring-offset-4', 'rounded-2xl');
+                    setTimeout(() => {
+                        el.classList.remove('ring-2', 'ring-[#000d6b]', 'ring-offset-4');
+                    }, 2500);
+                }, 100);
+            }
+        }
+    });
 </script>
 @endsection

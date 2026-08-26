@@ -10,10 +10,9 @@ use Illuminate\Http\Request;
 
 class AdminAbsensiController extends Controller
 {
-
     public function index(Request $request)
     {
-        $query = Absensi::with('pegawai')->latest('tanggal');
+        $query = Absensi::with('pegawai.divisi')->latest('tanggal');
 
         if ($date = $request->input('date')) {
             $query->whereDate('tanggal', $date);
@@ -21,10 +20,6 @@ class AdminAbsensiController extends Controller
 
         if ($pegawaiId = $request->input('pegawai_id')) {
             $query->where('pegawai_id', $pegawaiId);
-        }
-
-        if ($request->filled('synced')) {
-            $query->where('synced_to_sheet', $request->boolean('synced'));
         }
 
         $absensis = $query->paginate(20)->withQueryString();
@@ -35,31 +30,34 @@ class AdminAbsensiController extends Controller
             'total_today' => Absensi::whereDate('tanggal', $today)->count(),
             'masuk_today' => Absensi::whereDate('tanggal', $today)->whereNotNull('jam_masuk')->count(),
             'pulang_today' => Absensi::whereDate('tanggal', $today)->whereNotNull('jam_pulang')->count(),
-            'failed_sync' => Absensi::where('synced_to_sheet', false)->whereNotNull('jam_masuk')->count(),
         ];
 
         return view('admin.absensi.index', compact('absensis', 'pegawais', 'stats'));
     }
 
-    public function retrySync(Absensi $absensi)
-    {
-        // Google Sheets sync telah dinonaktifkan.
-        // Gunakan fitur Export Excel untuk mengunduh data absensi.
-        return back()->with('info', 'Sinkronisasi ke Google Sheets sudah dinonaktifkan. Gunakan tombol Export Excel.');
-    }
-
+    /**
+     * Input atau Koreksi Absen Terlewat / Manual
+     */
     public function manualStore(Request $request)
     {
         $request->validate([
             'pegawai_id' => ['required', 'exists:pegawais,id'],
             'tanggal'    => ['required', 'date'],
-            'jam_masuk'  => ['nullable', 'date_format:H:i'],
-            'jam_pulang' => ['nullable', 'date_format:H:i'],
+            'jam_masuk'  => ['nullable'],
+            'jam_pulang' => ['nullable'],
             'keterangan' => ['nullable', 'string', 'max:255'],
         ]);
 
         $pegawai = Pegawai::findOrFail($request->pegawai_id);
         $date = Carbon::parse($request->tanggal);
+
+        $jamMasuk = $request->jam_masuk 
+            ? (strlen($request->jam_masuk) === 5 ? $request->jam_masuk . ':00' : $request->jam_masuk)
+            : null;
+
+        $jamPulang = $request->jam_pulang 
+            ? (strlen($request->jam_pulang) === 5 ? $request->jam_pulang . ':00' : $request->jam_pulang)
+            : null;
 
         $absensi = Absensi::updateOrCreate(
             [
@@ -67,13 +65,41 @@ class AdminAbsensiController extends Controller
                 'tanggal'    => $date->toDateString(),
             ],
             [
-                'jam_masuk'  => $request->jam_masuk ? $request->jam_masuk . ':00' : null,
-                'jam_pulang' => $request->jam_pulang ? $request->jam_pulang . ':00' : null,
+                'jam_masuk'  => $jamMasuk,
+                'jam_pulang' => $jamPulang,
                 'keterangan' => $request->keterangan,
             ]
         );
 
-        return back()->with('success', "Absensi manual untuk {$pegawai->nama} tanggal {$date->format('d/m/Y')} berhasil disimpan.");
+        return back()->with('success', "Absensi untuk {$pegawai->nama} tanggal {$date->format('d/m/Y')} berhasil disimpan/dikoreksi.");
+    }
+
+    /**
+     * Update existing record
+     */
+    public function update(Request $request, Absensi $absensi)
+    {
+        $request->validate([
+            'jam_masuk'  => ['nullable'],
+            'jam_pulang' => ['nullable'],
+            'keterangan' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $jamMasuk = $request->jam_masuk 
+            ? (strlen($request->jam_masuk) === 5 ? $request->jam_masuk . ':00' : $request->jam_masuk)
+            : null;
+
+        $jamPulang = $request->jam_pulang 
+            ? (strlen($request->jam_pulang) === 5 ? $request->jam_pulang . ':00' : $request->jam_pulang)
+            : null;
+
+        $absensi->update([
+            'jam_masuk'  => $jamMasuk,
+            'jam_pulang' => $jamPulang,
+            'keterangan' => $request->keterangan,
+        ]);
+
+        return back()->with('success', "Data absensi tanggal {$absensi->tanggal->format('d/m/Y')} berhasil diperbarui.");
     }
 
     public function destroy(Absensi $absensi)

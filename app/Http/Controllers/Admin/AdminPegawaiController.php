@@ -44,7 +44,8 @@ class AdminPegawaiController extends Controller
 
     public function create()
     {
-        return view('admin.pegawai.create');
+        $divisis = \App\Models\Divisi::orderBy('nama')->get();
+        return view('admin.pegawai.create', compact('divisis'));
     }
 
     public function store(Request $request)
@@ -54,15 +55,25 @@ class AdminPegawaiController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:pegawais'],
             'password' => ['required', Rules\Password::defaults()],
             'area_kerja' => ['nullable', 'string', 'max:255'],
+            'divisi_id' => ['nullable', 'exists:divisis,id'],
             'sheet_tab_name' => ['nullable', 'string', 'max:255'],
             'is_admin' => ['nullable', 'boolean'],
         ]);
+
+        $divisiName = $request->area_kerja;
+        if ($request->filled('divisi_id')) {
+            $divObj = \App\Models\Divisi::find($request->divisi_id);
+            if ($divObj) {
+                $divisiName = $divObj->nama;
+            }
+        }
 
         Pegawai::create([
             'nama' => $request->nama,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'area_kerja' => $request->area_kerja,
+            'area_kerja' => $divisiName,
+            'divisi_id' => $request->divisi_id,
             'sheet_tab_name' => $request->sheet_tab_name ?: $request->nama,
             'is_admin' => $request->boolean('is_admin'),
         ]);
@@ -72,7 +83,8 @@ class AdminPegawaiController extends Controller
 
     public function edit(Pegawai $pegawai)
     {
-        return view('admin.pegawai.edit', compact('pegawai'));
+        $divisis = \App\Models\Divisi::orderBy('nama')->get();
+        return view('admin.pegawai.edit', compact('pegawai', 'divisis'));
     }
 
     public function update(Request $request, Pegawai $pegawai)
@@ -82,14 +94,24 @@ class AdminPegawaiController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('pegawais')->ignore($pegawai->id)],
             'password' => ['nullable', Rules\Password::defaults()],
             'area_kerja' => ['nullable', 'string', 'max:255'],
+            'divisi_id' => ['nullable', 'exists:divisis,id'],
             'sheet_tab_name' => ['nullable', 'string', 'max:255'],
             'is_admin' => ['nullable', 'boolean'],
         ]);
 
+        $divisiName = $request->area_kerja;
+        if ($request->filled('divisi_id')) {
+            $divObj = \App\Models\Divisi::find($request->divisi_id);
+            if ($divObj) {
+                $divisiName = $divObj->nama;
+            }
+        }
+
         $data = [
             'nama' => $request->nama,
             'email' => $request->email,
-            'area_kerja' => $request->area_kerja,
+            'area_kerja' => $divisiName,
+            'divisi_id' => $request->divisi_id,
             'sheet_tab_name' => $request->sheet_tab_name ?: $request->nama,
             'is_admin' => $request->boolean('is_admin'),
         ];

@@ -50,11 +50,18 @@ Route::middleware('auth')->group(function () {
         Route::delete('/pegawai/{pegawai}', [\App\Http\Controllers\Admin\AdminPegawaiController::class, 'destroy'])->name('pegawai.destroy');
         Route::post('/pegawai/{pegawai}/reset-signature', [\App\Http\Controllers\Admin\AdminPegawaiController::class, 'resetSignature'])->name('pegawai.reset-signature');
 
-        // Kelola Absensi
+        // Kelola Absensi & Absen Terlewat
         Route::get('/absensi', [\App\Http\Controllers\Admin\AdminAbsensiController::class, 'index'])->name('absensi.index');
         Route::post('/absensi/retry-sync/{absensi}', [\App\Http\Controllers\Admin\AdminAbsensiController::class, 'retrySync'])->name('absensi.retry-sync');
         Route::post('/absensi/manual', [\App\Http\Controllers\Admin\AdminAbsensiController::class, 'manualStore'])->name('absensi.manual');
+        Route::put('/absensi/{absensi}', [\App\Http\Controllers\Admin\AdminAbsensiController::class, 'update'])->name('absensi.update');
         Route::delete('/absensi/{absensi}', [\App\Http\Controllers\Admin\AdminAbsensiController::class, 'destroy'])->name('absensi.destroy');
+
+        // Kelola Divisi & Jadwal Jam Kerja
+        Route::get('/divisi', [\App\Http\Controllers\Admin\AdminDivisiController::class, 'index'])->name('divisi.index');
+        Route::post('/divisi', [\App\Http\Controllers\Admin\AdminDivisiController::class, 'store'])->name('divisi.store');
+        Route::put('/divisi/{divisi}', [\App\Http\Controllers\Admin\AdminDivisiController::class, 'update'])->name('divisi.update');
+        Route::delete('/divisi/{divisi}', [\App\Http\Controllers\Admin\AdminDivisiController::class, 'destroy'])->name('divisi.destroy');
 
         // Export Excel (Admin)
         Route::get('/export/{pegawai}/{bulan?}', [ExportController::class, 'exportPegawai'])->name('export.pegawai');

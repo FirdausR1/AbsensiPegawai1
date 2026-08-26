@@ -149,6 +149,15 @@
                     </svg>
                     <span>All Attendance</span>
                 </a>
+
+                <a href="{{ route('admin.divisi.index') }}"
+                   class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs transition {{ request()->routeIs('admin.divisi.*') ? 'sidebar-active' : 'sidebar-inactive' }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9"></circle>
+                        <polyline points="12 7 12 12 15 15"></polyline>
+                    </svg>
+                    <span>Shift & Waktu Kerja</span>
+                </a>
             @endif
         </nav>
 

@@ -191,15 +191,42 @@ class AbsensiExportService
         $signatureRowHeight = 35;
         $normalRowHeight    = 16;
 
+        $holidayService = app(\App\Services\HolidayService::class);
+
         for ($day = 1; $day <= $daysInMonth; $day++) {
             $row  = $firstDataRow + ($day - 1);
             $date = $carbonMonth->copy()->day($day);
             $absensi = $absensis->get($day);
 
-            // Warna baris hari libur/weekend
+            $isPastOrToday = $date->lte(Carbon::today());
+            $isHoliday = $holidayService->isHoliday($date);
+            $holidayName = $holidayService->getHolidayReason($date);
+
+            // Warna baris dan Keterangan
             $rowBg = null;
-            if ($date->isWeekend()) {
+            $keterangan = '';
+            $isAlpa = false;
+
+            if ($absensi && !empty($absensi->keterangan)) {
+                $keterangan = $absensi->keterangan;
+            } elseif ($isHoliday) {
+                $keterangan = $holidayName ?: 'Libur Nasional';
+                $rowBg = 'ffebee'; // merah muda lembut
+            } elseif ($date->isWeekend()) {
+                $keterangan = 'Libur';
                 $rowBg = 'fff8e1'; // kuning muda
+            } elseif ($absensi && $absensi->jam_masuk) {
+                $menitTerlambat = $absensi->getMenitTerlambat();
+                if ($menitTerlambat > 0) {
+                    $keterangan = "Terlambat {$menitTerlambat} Menit";
+                } else {
+                    $keterangan = "Hadir";
+                }
+            } elseif ($isPastOrToday) {
+                // Hari kerja yang terlewat dan tidak absen => ALPA
+                $keterangan = 'ALPA';
+                $rowBg = 'fce8e6';
+                $isAlpa = true;
             }
 
             // Isi data
@@ -207,7 +234,7 @@ class AbsensiExportService
             $sheet->setCellValue("B{$row}", $date->translatedFormat('d F Y'));
             $sheet->setCellValue("C{$row}", $absensi?->jam_masuk ? substr($absensi->jam_masuk, 0, 5) : '');
             $sheet->setCellValue("E{$row}", $absensi?->jam_pulang ? substr($absensi->jam_pulang, 0, 5) : '');
-            $sheet->setCellValue("G{$row}", $absensi?->keterangan ?? ($date->isWeekend() ? 'Libur' : ''));
+            $sheet->setCellValue("G{$row}", $keterangan);
 
             // Style baris data
             $dataStyle = [
@@ -221,6 +248,10 @@ class AbsensiExportService
             $sheet->getStyle("A{$row}:G{$row}")->applyFromArray($dataStyle);
             $sheet->getStyle("B{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
             $sheet->getStyle("G{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+
+            if ($isAlpa) {
+                $sheet->getStyle("G{$row}")->getFont()->setBold(true)->getColor()->setRGB('c5221f');
+            }
 
             // Tanda tangan
             $hasSignature = $absensi && $pegawai->hasSignature();

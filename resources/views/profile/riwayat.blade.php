@@ -115,8 +115,12 @@
                                 @endif
                             </td>
 
-                            <td class="py-4 px-5">
-                                @if($isHoliday)
+                            <td class="py-4 px-5 space-y-1">
+                                @if($absensi && !empty($absensi->keterangan))
+                                    <span class="inline-block px-2.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-800">
+                                        {{ $absensi->keterangan }}
+                                    </span>
+                                @elseif($isHoliday)
                                     <span class="inline-block px-2.5 py-1 rounded text-[10px] font-extrabold bg-[#fce8e6] text-[#c5221f] tracking-wider uppercase">
                                         {{ $dayItem['holiday_reason'] ?: 'HOLIDAY' }}
                                     </span>
@@ -126,7 +130,7 @@
                                     </span>
                                 @elseif($absensi && $absensi->jam_masuk && $absensi->jam_pulang)
                                     <span class="inline-block px-2.5 py-1 rounded text-[10px] font-extrabold bg-[#e6f4ea] text-[#137333] tracking-wider uppercase">
-                                        ACTIVE / COMPLETE
+                                        COMPLETE
                                     </span>
                                 @elseif($absensi && $absensi->jam_masuk)
                                     <span class="inline-block px-2.5 py-1 rounded text-[10px] font-extrabold bg-amber-50 text-amber-800 tracking-wider uppercase border border-amber-200">
@@ -134,10 +138,23 @@
                                     </span>
                                 @elseif(!$isFuture)
                                     <span class="inline-block px-2.5 py-1 rounded text-[10px] font-extrabold bg-[#fce8e6] text-[#c5221f] tracking-wider uppercase">
-                                        ABSENT
+                                        ALPA
                                     </span>
                                 @else
                                     <span class="text-slate-300">-</span>
+                                @endif
+
+                                @if($absensi && $absensi->jam_masuk)
+                                    @php
+                                        $menitTerlambat = $absensi->getMenitTerlambat();
+                                    @endphp
+                                    @if($menitTerlambat > 0)
+                                        <div>
+                                            <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                                Terlambat {{ $menitTerlambat }} Menit
+                                            </span>
+                                        </div>
+                                    @endif
                                 @endif
                             </td>
 
