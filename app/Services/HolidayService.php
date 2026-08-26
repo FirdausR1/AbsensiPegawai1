@@ -39,6 +39,18 @@ class HolidayService
         return $this->nationalHolidayName($date) !== null;
     }
 
+    // Alias methods for safety
+    public function isHoliday(Carbon $date): bool
+    {
+        return $this->isNationalHoliday($date);
+    }
+
+    public function getHolidayReason(Carbon $date): ?string
+    {
+        $name = $this->nationalHolidayName($date);
+        return $name ?: ($date->isWeekend() ? 'Libur' : null);
+    }
+
     protected function nationalHolidayName(Carbon $date): ?string
     {
         try {
@@ -52,8 +64,6 @@ class HolidayService
 
     /**
      * Ambil daftar libur nasional Indonesia untuk satu tahun, di-cache 1 hari.
-     * Sumber: Nager.Date public API (gratis, tanpa key). Fallback: array kosong kalau API down,
-     * supaya aplikasi tetap jalan (hari itu dianggap hari kerja biasa).
      */
     protected function holidaysForYear(int $year): array
     {

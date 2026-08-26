@@ -45,28 +45,34 @@ class Pegawai extends Authenticatable
 
     public function getDivisi(): Divisi
     {
-        if ($this->divisi) {
-            return $this->divisi;
-        }
-
-        // Try to match by area_kerja name
-        if ($this->area_kerja) {
-            $found = Divisi::where('nama', 'like', '%' . $this->area_kerja . '%')->first();
-            if ($found) {
-                return $found;
+        try {
+            if ($this->relationLoaded('divisi') && $this->divisi) {
+                return $this->divisi;
             }
+            if ($this->divisi_id && $this->divisi) {
+                return $this->divisi;
+            }
+            if ($this->area_kerja) {
+                $found = Divisi::where('nama', 'like', '%' . $this->area_kerja . '%')->first();
+                if ($found) {
+                    return $found;
+                }
+            }
+            $existing = Divisi::first();
+            if ($existing) {
+                return $existing;
+            }
+        } catch (\Throwable $e) {
+            // fallback if table does not exist or database is migrating
         }
 
-        // Fallback default divisi
-        return Divisi::firstOrCreate(
-            ['nama' => 'Staff Kantor'],
-            [
-                'jam_masuk' => '08:00:00',
-                'jam_pulang' => '17:00:00',
-                'toleransi_menit' => 0,
-                'keterangan' => 'Jam kerja standar operasional kantor',
-            ]
-        );
+        $fallback = new Divisi();
+        $fallback->nama = $this->area_kerja ?: 'Staff Kantor';
+        $fallback->jam_masuk = '08:00:00';
+        $fallback->jam_pulang = '17:00:00';
+        $fallback->toleransi_menit = 15;
+        $fallback->keterangan = 'Jam operasional standar';
+        return $fallback;
     }
 
     public function hasSignature(): bool

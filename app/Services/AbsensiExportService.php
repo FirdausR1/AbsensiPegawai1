@@ -82,14 +82,18 @@ class AbsensiExportService
 
         // Sisipkan logo ke A1:A2
         if (file_exists($logoPath)) {
-            $drawing = new Drawing();
-            $drawing->setPath($logoPath);
-            $drawing->setCoordinates('A1');
-            $drawing->setWidth(55);
-            $drawing->setHeight(50);
-            $drawing->setOffsetX(5);
-            $drawing->setOffsetY(2);
-            $drawing->setWorksheet($sheet);
+            try {
+                $drawing = new Drawing();
+                $drawing->setPath($logoPath);
+                $drawing->setCoordinates('A1');
+                $drawing->setWidth(55);
+                $drawing->setHeight(50);
+                $drawing->setOffsetX(5);
+                $drawing->setOffsetY(2);
+                $drawing->setWorksheet($sheet);
+            } catch (\Throwable $e) {
+                // Ignore if drawing fails
+            }
         }
 
         // === TENGAH: B1:E3 — "DAFTAR HADIR TENAGA KERJA" ===
@@ -216,7 +220,7 @@ class AbsensiExportService
                 $keterangan = 'Libur';
                 $rowBg = 'fff8e1'; // kuning muda
             } elseif ($absensi && $absensi->jam_masuk) {
-                $menitTerlambat = $absensi->getMenitTerlambat();
+                $menitTerlambat = $absensi->getMenitTerlambat($pegawai);
                 if ($menitTerlambat > 0) {
                     $keterangan = "Terlambat {$menitTerlambat} Menit";
                 } else {

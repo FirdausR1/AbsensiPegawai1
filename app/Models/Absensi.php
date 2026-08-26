@@ -30,25 +30,34 @@ class Absensi extends Model
     /**
      * Hitung berapa menit keterlambatan jam masuk terhadap jadwal divisi pegawai
      */
-    public function getMenitTerlambat(): int
+    public function getMenitTerlambat(?Pegawai $pegawai = null): int
     {
-        if (!$this->jam_masuk || !$this->pegawai) {
+        if (!$this->jam_masuk) {
             return 0;
         }
 
-        $divisi = $this->pegawai->getDivisi();
-        $targetJamMasuk = $divisi->jam_masuk ?: '08:00:00';
-        $toleransi = (int) ($divisi->toleransi_menit ?: 0);
+        $pegawai = $pegawai ?: $this->pegawai;
+        if (!$pegawai) {
+            return 0;
+        }
 
-        $tanggalStr = $this->tanggal instanceof Carbon 
-            ? $this->tanggal->toDateString() 
-            : Carbon::parse($this->tanggal)->toDateString();
+        try {
+            $divisi = $pegawai->getDivisi();
+            $targetJamMasuk = $divisi->jam_masuk ?: '08:00:00';
+            $toleransi = (int) ($divisi->toleransi_menit ?: 0);
 
-        $targetDateTime = Carbon::parse($tanggalStr . ' ' . $targetJamMasuk)->addMinutes($toleransi);
-        $actualDateTime = Carbon::parse($tanggalStr . ' ' . $this->jam_masuk);
+            $tanggalStr = $this->tanggal instanceof Carbon 
+                ? $this->tanggal->toDateString() 
+                : Carbon::parse($this->tanggal)->toDateString();
 
-        if ($actualDateTime->greaterThan($targetDateTime)) {
-            return (int) $targetDateTime->diffInMinutes($actualDateTime);
+            $targetDateTime = Carbon::parse($tanggalStr . ' ' . substr($targetJamMasuk, 0, 5) . ':00')->addMinutes($toleransi);
+            $actualDateTime = Carbon::parse($tanggalStr . ' ' . substr($this->jam_masuk, 0, 5) . ':00');
+
+            if ($actualDateTime->greaterThan($targetDateTime)) {
+                return (int) $targetDateTime->diffInMinutes($actualDateTime);
+            }
+        } catch (\Throwable $e) {
+            return 0;
         }
 
         return 0;
