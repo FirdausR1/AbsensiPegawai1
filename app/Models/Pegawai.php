@@ -151,6 +151,15 @@ class Pegawai extends Authenticatable
         return !empty($this->getFotoUrl());
     }
 
+    public function isShiftWorker(): bool
+    {
+        if ($this->divisi && $this->divisi->hari_kerja_tipe === '7_hari') {
+            return true;
+        }
+        $name = strtolower(($this->area_kerja ?: '') . ' ' . ($this->divisi?->nama ?: ''));
+        return str_contains($name, 'satpam') || str_contains($name, 'security') || str_contains($name, 'cleaning') || str_contains($name, 'shift') || str_contains($name, 'danru');
+    }
+
     public function getInitials(): string
     {
         $words = explode(' ', trim($this->nama ?? 'Pegawai'));

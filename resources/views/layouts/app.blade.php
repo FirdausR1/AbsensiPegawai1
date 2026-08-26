@@ -129,13 +129,15 @@
                 <span>Pengajuan Cuti</span>
             </a>
 
-            <a href="{{ route('jadwal-shift.index') }}"
-               class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs transition {{ request()->routeIs('jadwal-shift.index') && !request()->is('admin/*') ? 'sidebar-active' : 'sidebar-inactive' }}">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m8.66-13l-.87.5M4.21 15.5l-.87.5M20.66 15.5l-.87-.5M4.21 8.5l-.87-.5M21 12h-1M4 12H3m15.36-6.36l-.71.71M6.34 17.66l-.71.71M17.66 17.66l.71.71M6.34 6.34l.71.71"></path>
-                </svg>
-                <span>Jadwal Shift Saya</span>
-            </a>
+            @if(auth()->check() && auth()->user()->isShiftWorker())
+                <a href="{{ route('jadwal-shift.index') }}"
+                   class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs transition {{ request()->routeIs('jadwal-shift.index') && !request()->is('admin/*') ? 'sidebar-active' : 'sidebar-inactive' }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m8.66-13l-.87.5M4.21 15.5l-.87.5M20.66 15.5l-.87-.5M4.21 8.5l-.87-.5M21 12h-1M4 12H3m15.36-6.36l-.71.71M6.34 17.66l-.71.71M17.66 17.66l.71.71M6.34 6.34l.71.71"></path>
+                    </svg>
+                    <span>Jadwal Shift Saya</span>
+                </a>
+            @endif
 
             <a href="{{ route('export.sendiri') }}"
                class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs transition sidebar-inactive">
@@ -286,6 +288,9 @@
             <a href="{{ route('profile.edit') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('profile.edit') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-700' }}">Profile</a>
             <a href="{{ route('profile.signature') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('profile.signature') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-700' }}">Digital Signature</a>
             <a href="{{ route('cuti.index') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('cuti.*') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-700' }}">Pengajuan Cuti</a>
+            @if(auth()->check() && auth()->user()->isShiftWorker())
+                <a href="{{ route('jadwal-shift.index') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('jadwal-shift.index') && !request()->is('admin/*') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-700' }}">Jadwal Shift Saya</a>
+            @endif
             <a href="{{ route('export.sendiri') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold text-slate-700">Export Excel</a>
             @if(auth()->check() && auth()->user()->hasAdminAccess())
                 <div class="pt-2 pb-1 border-t border-slate-100">

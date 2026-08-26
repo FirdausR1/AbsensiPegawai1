@@ -34,6 +34,23 @@
         </div>
     </div>
 
+    @if(!$pegawai->isShiftWorker() && $jadwals->isEmpty())
+        <div class="bg-gradient-to-r from-[#eef2ff] to-white rounded-2xl border border-indigo-100 p-6 shadow-sm flex items-start gap-4">
+            <div class="w-10 h-10 rounded-xl bg-[#000d6b] text-white flex items-center justify-center text-lg font-bold shrink-0">
+                🏢
+            </div>
+            <div>
+                <h3 class="text-sm font-bold text-slate-900">Informasi Jam Kerja Staff / Non-Shift</h3>
+                <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                    Divisi/Departemen Anda (<strong>{{ $pegawai->area_kerja ?: ($pegawai->divisi?->nama ?? 'Staff Kantor') }}</strong>) menggunakan jam operasional standar perusahaan (<strong>08:00 – 17:00</strong>, Senin – Jumat) dan tidak memerlukan jadwal shift bergilir.
+                </p>
+                <p class="text-[11px] text-slate-400 mt-1">
+                    *Fitur Jadwal Shift khusus digunakan oleh Divisi Satpam, Security, dan Cleaning Service yang memiliki jadwal pergantian jam kerja 24/7.
+                </p>
+            </div>
+        </div>
+    @endif
+
     @if(session('success'))
         <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-xs font-semibold">
             ✅ {{ session('success') }}
