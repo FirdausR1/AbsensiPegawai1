@@ -4,6 +4,7 @@ use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CutiController;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\JadwalShiftController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +24,10 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [AbsensiController::class, 'dashboard'])->name('dashboard');
     Route::get('/riwayat', [AbsensiController::class, 'riwayat'])->name('absen.riwayat');
+
+    // Jadwal Shift (Employee view)
+    Route::get('/jadwal-shift', [JadwalShiftController::class, 'index'])->name('jadwal-shift.index');
+    Route::post('/jadwal-shift/request', [JadwalShiftController::class, 'requestGanti'])->name('jadwal-shift.request');
 
     // Pengajuan Cuti (Employee)
     Route::get('/cuti', [CutiController::class, 'index'])->name('cuti.index');
@@ -73,6 +78,14 @@ Route::middleware('auth')->group(function () {
         Route::post('/divisi', [\App\Http\Controllers\Admin\AdminDivisiController::class, 'store'])->name('divisi.store');
         Route::put('/divisi/{divisi}', [\App\Http\Controllers\Admin\AdminDivisiController::class, 'update'])->name('divisi.update');
         Route::delete('/divisi/{divisi}', [\App\Http\Controllers\Admin\AdminDivisiController::class, 'destroy'])->name('divisi.destroy');
+
+        // Kelola Jadwal Shift (Satpam / CS)
+        Route::get('/jadwal-shift', [\App\Http\Controllers\Admin\AdminJadwalShiftController::class, 'index'])->name('jadwal-shift.index');
+        Route::post('/jadwal-shift', [\App\Http\Controllers\Admin\AdminJadwalShiftController::class, 'store'])->name('jadwal-shift.store');
+        Route::post('/jadwal-shift/bulk', [\App\Http\Controllers\Admin\AdminJadwalShiftController::class, 'storeBulk'])->name('jadwal-shift.bulk');
+        Route::post('/jadwal-shift/destroy', [\App\Http\Controllers\Admin\AdminJadwalShiftController::class, 'destroy'])->name('jadwal-shift.destroy');
+        Route::get('/jadwal-shift/requests', [\App\Http\Controllers\Admin\AdminJadwalShiftController::class, 'requests'])->name('jadwal-shift.requests');
+        Route::post('/jadwal-shift/{jadwalShift}/approve', [\App\Http\Controllers\Admin\AdminJadwalShiftController::class, 'approveRequest'])->name('jadwal-shift.approve');
 
         // Export Excel (Admin)
         Route::get('/export/{pegawai}/{bulan?}', [ExportController::class, 'exportPegawai'])->name('export.pegawai');

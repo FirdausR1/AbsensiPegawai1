@@ -213,40 +213,57 @@ class AbsensiExportService
             $isAlpa = false;
 
             $approvedCuti = $pegawai->getApprovedCutiOnDate($date);
+            $jadwalShift  = $pegawai->getJadwalOnDate($date);
 
             if ($approvedCuti) {
                 $keterangan = "Cuti ({$approvedCuti->jumlah_hari} Hari - {$approvedCuti->tipe_cuti})";
-                $rowBg = 'e8eaf6'; // ungu/biru muda lembut
+                $rowBg = 'e8eaf6'; // ungu muda
             } elseif ($absensi && !empty($absensi->keterangan)) {
                 $keterangan = $absensi->keterangan;
                 if (stripos($keterangan, 'cuti') !== false) {
                     $rowBg = 'e8eaf6';
                 }
             } elseif ($absensi && $absensi->jam_masuk) {
-                // Pegawai hadir kerja (termasuk Satpam / Shift di hari libur atau akhir pekan)
+                // Pegawai hadir (termasuk shift di hari libur/akhir pekan)
                 $menitTerlambat = $absensi->getMenitTerlambat($pegawai);
                 if ($menitTerlambat > 0) {
                     $keterangan = "Terlambat {$menitTerlambat} Menit";
+                } elseif ($jadwalShift) {
+                    $keterangan = "Hadir (Shift {$jadwalShift->tipe_shift})";
                 } elseif ($isHoliday || $date->isWeekend()) {
                     $keterangan = "Hadir (Shift)";
                 } else {
                     $keterangan = "Hadir";
                 }
+            } elseif ($jadwalShift && $jadwalShift->isLibur()) {
+                // Dijadwalkan libur oleh Danru
+                $keterangan = 'Libur (Jadwal)';
+                $rowBg = 'fff8e1';
+            } elseif ($jadwalShift) {
+                // Ada jadwal shift tapi tidak absen = ALPA (harusnya masuk)
+                $keterangan = 'ALPA';
+                $rowBg = 'fce8e6';
+                $isAlpa = true;
             } elseif ($isHoliday && $divisi->hari_kerja_tipe !== '7_hari') {
                 $keterangan = $holidayName ?: 'Libur Nasional';
-                $rowBg = 'ffebee'; // merah muda lembut
+                $rowBg = 'ffebee';
             } elseif ($date->isWeekend() && $divisi->hari_kerja_tipe === '5_hari') {
                 $keterangan = 'Libur';
-                $rowBg = 'fff8e1'; // kuning muda
+                $rowBg = 'fff8e1';
             } elseif ($date->isSunday() && $divisi->hari_kerja_tipe === '6_hari') {
                 $keterangan = 'Libur';
                 $rowBg = 'fff8e1';
+            } elseif ($divisi->hari_kerja_tipe === '7_hari' && $isPastOrToday && !$jadwalShift) {
+                // 7 hari kerja tapi tidak ada jadwal = Libur otomatis (sistem shift bergilir)
+                $keterangan = 'Libur';
+                $rowBg = 'fff8e1';
             } elseif ($isPastOrToday) {
-                // Hari kerja yang terlewat dan tidak absen => ALPA
+                // Hari kerja terlewat dan tidak absen = ALPA
                 $keterangan = 'ALPA';
                 $rowBg = 'fce8e6';
                 $isAlpa = true;
             }
+
 
             // Isi data
             $sheet->setCellValue("A{$row}", $day);

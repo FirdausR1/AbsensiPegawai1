@@ -129,6 +129,14 @@
                 <span>Pengajuan Cuti</span>
             </a>
 
+            <a href="{{ route('jadwal-shift.index') }}"
+               class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs transition {{ request()->routeIs('jadwal-shift.index') && !request()->is('admin/*') ? 'sidebar-active' : 'sidebar-inactive' }}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m8.66-13l-.87.5M4.21 15.5l-.87.5M20.66 15.5l-.87-.5M4.21 8.5l-.87-.5M21 12h-1M4 12H3m15.36-6.36l-.71.71M6.34 17.66l-.71.71M17.66 17.66l.71.71M6.34 6.34l.71.71"></path>
+                </svg>
+                <span>Jadwal Shift Saya</span>
+            </a>
+
             <a href="{{ route('export.sendiri') }}"
                class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs transition sidebar-inactive">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -166,6 +174,18 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                     </svg>
                     <span>Persetujuan Cuti</span>
+                </a>
+
+                <a href="{{ route('admin.jadwal-shift.index') }}"
+                   class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs transition {{ request()->routeIs('admin.jadwal-shift.*') ? 'sidebar-active' : 'sidebar-inactive' }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"></path>
+                    </svg>
+                    <span>Jadwal Shift Satpam</span>
                 </a>
 
                 <a href="{{ route('admin.divisi.index') }}"

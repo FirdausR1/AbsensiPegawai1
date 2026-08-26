@@ -44,6 +44,18 @@ class Pegawai extends Authenticatable
         return $this->hasMany(Cuti::class);
     }
 
+    public function jadwalShifts()
+    {
+        return $this->hasMany(JadwalShift::class);
+    }
+
+    public function getJadwalOnDate(\Carbon\Carbon $date): ?JadwalShift
+    {
+        return $this->jadwalShifts()
+            ->whereDate('tanggal', $date->toDateString())
+            ->first();
+    }
+
     public function getApprovedCutiOnDate(\Carbon\Carbon $date): ?Cuti
     {
         $dateStr = $date->toDateString();
