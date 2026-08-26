@@ -29,6 +29,7 @@
             }
         }
     </script>
+    <link rel="icon" type="image/png" href="{{ asset('images/Picture1.png') }}">
     <style>
         body { font-family: 'Plus Jakarta Sans', Inter, sans-serif; }
         .sidebar-active {
@@ -57,17 +58,14 @@
     <!-- Sidebar (Desktop) -->
     <aside class="hidden lg:flex lg:flex-col w-64 bg-white border-r border-slate-200 shrink-0 h-screen sticky top-0 z-40">
         <!-- Sidebar Brand -->
-        <div class="p-6 pb-4 flex items-center gap-3">
-            <div class="w-10 h-10 bg-[#000d6b] rounded-xl flex items-center justify-center text-white shadow-md shadow-indigo-950/20 shrink-0">
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M19 2H9c-1.1 0-2 .9-2 2v1.5H5c-1.1 0-2 .9-2 2V20c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM5 7.5h2V10H5V7.5zm0 4.5h2v2.5H5V12zm0 4.5h2V19H5v-2.5zm14 3.5H9V4h10v15zm-8-13h2V8h-2V6.5zm0 3.5h2v1.5h-2V10zm0 3.5h2V15h-2v-1.5zm0 3.5h2v1.5h-2V17zm4-10.5h2V8h-2V6.5zm0 3.5h2v1.5h-2V10zm0 3.5h2V15h-2v-1.5zm0 3.5h2v1.5h-2V17z"/>
-                </svg>
-            </div>
+        <a href="{{ route('dashboard') }}" class="p-6 pb-4 flex items-center gap-3 hover:opacity-95 transition group">
+            <img src="{{ asset('images/Picture1.png') }}"
+                 alt="PT Inti Sarana Wijaya Logo"
+                 class="w-10 h-10 rounded-xl object-contain shadow-sm shrink-0">
             <div>
-                <h1 class="font-bold text-slate-900 text-sm tracking-tight leading-tight">PT Inti Sarana Wijaya</h1>
+                <h1 class="font-bold text-slate-900 text-sm tracking-tight leading-tight group-hover:text-[#000d6b] transition">PT Inti Sarana Wijaya</h1>
                 <p class="text-[11px] text-slate-400 font-medium">Attendance System</p>
-            </div>
-        </div>
+        </a>
 
         <!-- Quick Clock-In Button -->
         <div class="px-5 py-3">

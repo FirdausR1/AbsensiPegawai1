@@ -27,6 +27,7 @@
             }
         }
     </script>
+    <link rel="icon" type="image/png" href="{{ asset('images/Picture1.png') }}">
     <style>
         body { font-family: 'Plus Jakarta Sans', Inter, sans-serif; }
     </style>
@@ -38,10 +39,10 @@
         <div class="lg:col-span-5 xl:col-span-5 flex flex-col justify-between p-8 sm:p-12 lg:p-16 bg-white z-10">
             <!-- Top Branding -->
             <div>
-                <div class="w-12 h-12 bg-[#000d6b] rounded-xl flex items-center justify-center text-white shadow-md shadow-indigo-950/20 mb-8">
-                    <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M19 2H9c-1.1 0-2 .9-2 2v1.5H5c-1.1 0-2 .9-2 2V20c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM5 7.5h2V10H5V7.5zm0 4.5h2v2.5H5V12zm0 4.5h2V19H5v-2.5zm14 3.5H9V4h10v15zm-8-13h2V8h-2V6.5zm0 3.5h2v1.5h-2V10zm0 3.5h2V15h-2v-1.5zm0 3.5h2v1.5h-2V17zm4-10.5h2V8h-2V6.5zm0 3.5h2v1.5h-2V10zm0 3.5h2V15h-2v-1.5zm0 3.5h2v1.5h-2V17z"/>
-                    </svg>
+                <div class="mb-8">
+                    <img src="{{ asset('images/Picture1.png') }}"
+                         alt="PT Inti Sarana Wijaya Logo"
+                         class="w-14 h-14 rounded-2xl object-contain shadow-sm">
                 </div>
 
                 <h1 class="text-2xl sm:text-3xl font-extrabold text-[#000d6b] tracking-tight">
