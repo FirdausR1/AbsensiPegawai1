@@ -149,7 +149,7 @@
             </table>
         </div>
 
-        @if($pegawais->hasPages())
+        @if(method_exists($pegawais, 'hasPages') && $pegawais->hasPages())
             <div class="mt-4 pt-3 border-t border-slate-100">
                 {{ $pegawais->links() }}
             </div>

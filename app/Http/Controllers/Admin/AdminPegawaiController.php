@@ -25,11 +25,13 @@ class AdminPegawaiController extends Controller
             });
         }
 
-        $pegawais = $query->orderBy('nama', 'asc')->get();
+        $pegawais = $query->orderBy('nama', 'asc')->paginate(15)->withQueryString();
 
         $stats = [
             'total' => Pegawai::count(),
+            'has_signature' => Pegawai::whereNotNull('signature_path')->where('signature_path', '!=', '')->count(),
             'with_signature' => Pegawai::whereNotNull('signature_path')->where('signature_path', '!=', '')->count(),
+            'admin' => Pegawai::where('is_admin', true)->count(),
             'admins' => Pegawai::where('is_admin', true)->count(),
         ];
 
