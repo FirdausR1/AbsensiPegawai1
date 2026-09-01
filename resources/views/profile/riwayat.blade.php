@@ -22,12 +22,34 @@
                 Print
             </button>
 
-            <a href="{{ route('export.sendiri', $carbonMonth->format('Y-m')) }}"
-               class="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-[#000d6b] hover:bg-[#001253] rounded-lg transition shadow-sm tracking-wide">
+            <button type="button" onclick="document.getElementById('modal-export-riwayat').classList.remove('hidden')"
+                    class="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-[#000d6b] hover:bg-[#001253] rounded-lg transition shadow-sm tracking-wide">
                 <span>📥</span> Export Excel (.xlsx)
-            </a>
+            </button>
         </div>
     </div>
+
+    <!-- Modal Export Excel Riwayat -->
+    <div id="modal-export-riwayat" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl border border-slate-200 max-w-sm w-full p-5 shadow-xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <h3 class="text-sm font-bold text-[#000d6b]">Export Rekap Absensi {{ $carbonMonth->translatedFormat('F Y') }}</h3>
+                <button onclick="document.getElementById('modal-export-riwayat').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+            </div>
+            <p class="text-xs text-slate-600">
+                Pilih opsi tampilan kolom koordinat/lokasi GPS presensi pada file Excel:
+            </p>
+            <div class="space-y-2">
+                <a href="{{ route('export.sendiri', ['bulan' => $carbonMonth->format('Y-m'), 'include_location' => 1]) }}"
+                   class="w-full flex items-center justify-center gap-2 p-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition">
+                    <span>📍</span> Download Dengan Kolom Lokasi GPS
+                </a>
+                <a href="{{ route('export.sendiri', $carbonMonth->format('Y-m')) }}"
+                   class="w-full flex items-center justify-center gap-2 p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition">
+                    <span>📄</span> Download Standar (Kolom Lokasi Dihide)
+                </a>
+            </div>
+        </div>
 
     <!-- Search & Filter Card Box -->
     <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">

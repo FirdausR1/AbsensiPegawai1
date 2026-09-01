@@ -43,6 +43,10 @@ class AdminPegawaiController extends Controller
             $query->where('area_kerja', $department);
         }
 
+        if ($status = $request->input('status_karyawan')) {
+            $query->where('status_karyawan', $status);
+        }
+
         $pegawais = $query->orderBy('nama', 'asc')->paginate(15)->withQueryString();
 
         $statsQuery = Pegawai::query();
@@ -62,7 +66,9 @@ class AdminPegawaiController extends Controller
             })->count(),
         ];
 
-        return view('admin.pegawai.index', compact('pegawais', 'stats', 'currentUser'));
+        $kantorKliens = \App\Models\KantorKlien::orderBy('nama_kantor')->get();
+
+        return view('admin.pegawai.index', compact('pegawais', 'stats', 'currentUser', 'kantorKliens'));
     }
 
     public function create()
@@ -78,7 +84,9 @@ class AdminPegawaiController extends Controller
             $divisis = Divisi::orderBy('nama')->get();
         }
 
-        return view('admin.pegawai.create', compact('divisis', 'currentUser'));
+        $kantorKliens = \App\Models\KantorKlien::orderBy('nama_kantor')->get();
+
+        return view('admin.pegawai.create', compact('divisis', 'currentUser', 'kantorKliens'));
     }
 
     public function store(Request $request)
@@ -89,11 +97,21 @@ class AdminPegawaiController extends Controller
             'nama' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:pegawais'],
             'password' => ['required', Rules\Password::defaults()],
+            'status_karyawan' => ['required', 'in:internal,outsourcing'],
             'area_kerja' => ['nullable', 'string', 'max:255'],
             'divisi_id' => ['nullable', 'exists:divisis,id'],
-            'role' => ['nullable', 'in:staff,admin_divisi,super_admin'],
+            'role' => ['nullable', 'in:staff,admin_divisi,super_admin,kepala_isw'],
             'sheet_tab_name' => ['nullable', 'string', 'max:255'],
             'foto' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:4096'],
+            'nik' => ['nullable', 'string', 'max:30'],
+            'tempat_lahir' => ['nullable', 'string', 'max:255'],
+            'tanggal_lahir' => ['nullable', 'date'],
+            'jenis_kelamin' => ['nullable', 'string', 'max:20'],
+            'alamat' => ['nullable', 'string'],
+            'pendidikan_terakhir' => ['nullable', 'string', 'max:50'],
+            'no_hp' => ['nullable', 'string', 'max:50'],
+            'status_pernikahan' => ['nullable', 'string', 'max:50'],
+            'kontak_darurat' => ['nullable', 'string', 'max:255'],
         ]);
 
         $divisiId = $request->divisi_id;
@@ -105,15 +123,12 @@ class AdminPegawaiController extends Controller
             $role = 'staff';
         }
 
-        $divisiName = $request->area_kerja;
-        if ($divisiId) {
-            $divObj = Divisi::find($divisiId);
-            if ($divObj) {
-                $divisiName = $divObj->nama;
-            }
+        $areaKerja = $request->area_kerja;
+        if (empty($areaKerja) && $request->status_karyawan === 'internal') {
+            $areaKerja = 'Head Office PT ISW';
         }
 
-        $isAdmin = ($role === 'super_admin' || $role === 'admin_divisi');
+        $isAdmin = ($role === 'super_admin' || $role === 'admin_divisi' || $role === 'kepala_isw');
 
         $fotoPath = null;
         if ($request->hasFile('foto')) {
@@ -124,12 +139,22 @@ class AdminPegawaiController extends Controller
             'nama' => $request->nama,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'area_kerja' => $divisiName,
+            'area_kerja' => $areaKerja,
+            'status_karyawan' => $request->status_karyawan,
             'divisi_id' => $divisiId,
             'role' => $role,
             'is_admin' => $isAdmin,
             'foto_path' => $fotoPath,
             'sheet_tab_name' => $request->sheet_tab_name ?: $request->nama,
+            'nik' => $request->nik,
+            'tempat_lahir' => $request->tempat_lahir,
+            'tanggal_lahir' => $request->tanggal_lahir,
+            'jenis_kelamin' => $request->jenis_kelamin ?: 'Laki-laki',
+            'alamat' => $request->alamat,
+            'pendidikan_terakhir' => $request->pendidikan_terakhir ?: 'SMA/SMK',
+            'no_hp' => $request->no_hp,
+            'status_pernikahan' => $request->status_pernikahan ?: 'Belum Menikah',
+            'kontak_darurat' => $request->kontak_darurat,
         ]);
 
         return redirect()->route('admin.pegawai.index')->with('success', "Pegawai {$request->nama} berhasil ditambahkan.");
@@ -149,7 +174,9 @@ class AdminPegawaiController extends Controller
             $divisis = Divisi::orderBy('nama')->get();
         }
 
-        return view('admin.pegawai.edit', compact('pegawai', 'divisis', 'currentUser'));
+        $kantorKliens = \App\Models\KantorKlien::orderBy('nama_kantor')->get();
+
+        return view('admin.pegawai.edit', compact('pegawai', 'divisis', 'currentUser', 'kantorKliens'));
     }
 
     public function update(Request $request, Pegawai $pegawai)
@@ -166,11 +193,21 @@ class AdminPegawaiController extends Controller
             'nama' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('pegawais')->ignore($pegawai->id)],
             'password' => ['nullable', Rules\Password::defaults()],
+            'status_karyawan' => ['required', 'in:internal,outsourcing'],
             'area_kerja' => ['nullable', 'string', 'max:255'],
             'divisi_id' => ['nullable', 'exists:divisis,id'],
-            'role' => ['nullable', 'in:staff,admin_divisi,super_admin'],
+            'role' => ['nullable', 'in:staff,admin_divisi,super_admin,kepala_isw'],
             'sheet_tab_name' => ['nullable', 'string', 'max:255'],
             'foto' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:4096'],
+            'nik' => ['nullable', 'string', 'max:30'],
+            'tempat_lahir' => ['nullable', 'string', 'max:255'],
+            'tanggal_lahir' => ['nullable', 'date'],
+            'jenis_kelamin' => ['nullable', 'string', 'max:20'],
+            'alamat' => ['nullable', 'string'],
+            'pendidikan_terakhir' => ['nullable', 'string', 'max:50'],
+            'no_hp' => ['nullable', 'string', 'max:50'],
+            'status_pernikahan' => ['nullable', 'string', 'max:50'],
+            'kontak_darurat' => ['nullable', 'string', 'max:255'],
         ]);
 
         $divisiId = $request->divisi_id;
@@ -180,24 +217,31 @@ class AdminPegawaiController extends Controller
             $divisiId = $currentUser->divisi_id ?: $pegawai->divisi_id;
         }
 
-        $divisiName = $request->area_kerja;
-        if ($divisiId) {
-            $divObj = Divisi::find($divisiId);
-            if ($divObj) {
-                $divisiName = $divObj->nama;
-            }
+        $areaKerja = $request->area_kerja;
+        if (empty($areaKerja) && $request->status_karyawan === 'internal') {
+            $areaKerja = 'Head Office PT ISW';
         }
 
-        $isAdmin = ($role === 'super_admin' || $role === 'admin_divisi');
+        $isAdmin = ($role === 'super_admin' || $role === 'admin_divisi' || $role === 'kepala_isw');
 
         $data = [
             'nama' => $request->nama,
             'email' => $request->email,
-            'area_kerja' => $divisiName,
+            'area_kerja' => $areaKerja,
+            'status_karyawan' => $request->status_karyawan,
             'divisi_id' => $divisiId,
             'role' => $role,
             'is_admin' => $isAdmin,
             'sheet_tab_name' => $request->sheet_tab_name ?: $request->nama,
+            'nik' => $request->nik,
+            'tempat_lahir' => $request->tempat_lahir,
+            'tanggal_lahir' => $request->tanggal_lahir,
+            'jenis_kelamin' => $request->jenis_kelamin ?: 'Laki-laki',
+            'alamat' => $request->alamat,
+            'pendidikan_terakhir' => $request->pendidikan_terakhir ?: 'SMA/SMK',
+            'no_hp' => $request->no_hp,
+            'status_pernikahan' => $request->status_pernikahan ?: 'Belum Menikah',
+            'kontak_darurat' => $request->kontak_darurat,
         ];
 
         if ($request->hasFile('foto')) {
@@ -243,7 +287,7 @@ class AdminPegawaiController extends Controller
         $currentUser = auth()->user();
 
         if ($currentUser->isDivisionAdmin() && $pegawai->divisi_id !== $currentUser->divisi_id) {
-            return back()->with('error', 'Akses ditolak.');
+            return redirect()->route('admin.pegawai.index')->with('error', 'Akses ditolak.');
         }
 
         if ($pegawai->signature_path && Storage::disk('public')->exists($pegawai->signature_path)) {
@@ -255,6 +299,110 @@ class AdminPegawaiController extends Controller
             'signature_updated_at' => null,
         ]);
 
-        return back()->with('success', "Tanda tangan digital {$pegawai->nama} berhasil direset.");
+        return redirect()->back()->with('success', "Tanda tangan digital untuk {$pegawai->nama} berhasil direset.");
+    }
+
+    /**
+     * Cetak SPK / Kontrak Kerja Universal Pegawai
+     */
+    public function cetakKontrak(Pegawai $pegawai)
+    {
+        $pegawai->load('divisi');
+        $kepala = Pegawai::where('role', 'kepala_isw')
+            ->orWhere('id', auth()->id())
+            ->first() ?: (Pegawai::where('is_admin', true)->first() ?: auth()->user());
+
+        return view('admin.pegawai.cetak-kontrak', compact('pegawai', 'kepala'));
+    }
+
+    /**
+     * Cetak SPK / Kontrak Kerja Massal Per Kantor Klien (Site Area)
+     */
+    public function cetakKontrakMassal(Request $request)
+    {
+        $currentUser = auth()->user();
+        $query = Pegawai::with('divisi')
+            ->where('role', '!=', 'super_admin')
+            ->orderBy('nama');
+
+        if ($currentUser->isDivisionAdmin()) {
+            if ($currentUser->area_kerja) {
+                $query->where('area_kerja', 'like', "%{$currentUser->area_kerja}%");
+            } elseif ($currentUser->divisi_id) {
+                $query->where('divisi_id', $currentUser->divisi_id);
+            }
+        }
+
+        if ($site = $request->input('site') ?: $request->input('department')) {
+            $query->where('area_kerja', 'like', "%{$site}%");
+        }
+
+        if ($status = $request->input('status_karyawan')) {
+            $query->where('status_karyawan', $status);
+        }
+
+        $pegawais = $query->get();
+
+        if ($pegawais->isEmpty()) {
+            return redirect()->back()->with('error', 'Tidak ada pegawai yang ditemukan untuk dicetak kontrak massal.');
+        }
+
+        $kepala = Pegawai::where('role', 'kepala_isw')
+            ->orWhere('id', auth()->id())
+            ->first() ?: (Pegawai::where('is_admin', true)->first() ?: auth()->user());
+
+        $siteName = $site ?: 'Semua Kantor Klien';
+
+        return view('admin.pegawai.cetak-kontrak-massal', compact('pegawais', 'kepala', 'siteName'));
+    }
+
+    /**
+     * Cetak Surat Keterangan Bekerja (SKK) Individual
+     */
+    public function cetakSkk(Pegawai $pegawai)
+    {
+        $pegawai->load('divisi');
+        $kepala = Pegawai::where('role', 'kepala_isw')
+            ->orWhere('id', auth()->id())
+            ->first() ?: (Pegawai::where('is_admin', true)->first() ?: auth()->user());
+
+        return view('admin.pegawai.cetak-skk', compact('pegawai', 'kepala'));
+    }
+
+    /**
+     * Cetak Surat Keterangan Bekerja (SKK) Massal Per Kantor Klien
+     */
+    public function cetakSkkMassal(Request $request)
+    {
+        $currentUser = auth()->user();
+        $query = Pegawai::with('divisi')
+            ->where('role', '!=', 'super_admin')
+            ->orderBy('nama');
+
+        if ($currentUser->isDivisionAdmin()) {
+            if ($currentUser->area_kerja) {
+                $query->where('area_kerja', 'like', "%{$currentUser->area_kerja}%");
+            } elseif ($currentUser->divisi_id) {
+                $query->where('divisi_id', $currentUser->divisi_id);
+            }
+        }
+
+        if ($site = $request->input('site') ?: $request->input('department')) {
+            $query->where('area_kerja', 'like', "%{$site}%");
+        }
+
+        $pegawais = $query->get();
+
+        if ($pegawais->isEmpty()) {
+            return redirect()->back()->with('error', 'Tidak ada pegawai yang ditemukan untuk dicetak surat keterangan kerja massal.');
+        }
+
+        $kepala = Pegawai::where('role', 'kepala_isw')
+            ->orWhere('id', auth()->id())
+            ->first() ?: (Pegawai::where('is_admin', true)->first() ?: auth()->user());
+
+        $siteName = $site ?: 'Semua Kantor Klien';
+
+        return view('admin.pegawai.cetak-skk-massal', compact('pegawais', 'kepala', 'siteName'));
     }
 }

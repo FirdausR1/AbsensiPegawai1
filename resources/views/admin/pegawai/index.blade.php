@@ -11,17 +11,30 @@
             <p class="text-xs sm:text-sm text-slate-500 mt-1">Manage system access, roles, and employee records.</p>
         </div>
 
-        <a href="{{ route('admin.pegawai.create') }}"
-           class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#000d6b] hover:bg-[#001253] text-white text-xs sm:text-sm font-bold rounded-lg shadow-sm transition tracking-wide">
-            <span>+</span> Add New User
-        </a>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="{{ route('admin.pegawai.cetak-skk-massal', ['site' => request('department')]) }}" target="_blank"
+               class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white text-xs sm:text-sm font-bold rounded-lg shadow-sm transition tracking-wide">
+                📜 Cetak SKK Massal {{ request('department') ? '('.request('department').')' : '' }}
+            </a>
+
+            <a href="{{ route('admin.pegawai.cetak-kontrak-massal', ['site' => request('department')]) }}" target="_blank"
+               class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-lg shadow-sm transition tracking-wide">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                📄 Cetak Kontrak Massal {{ request('department') ? '('.request('department').')' : '' }}
+            </a>
+
+            <a href="{{ route('admin.pegawai.create') }}"
+               class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#000d6b] hover:bg-[#001253] text-white text-xs sm:text-sm font-bold rounded-lg shadow-sm transition tracking-wide">
+                <span>+</span> Add New User
+            </a>
+        </div>
     </div>
 
     <!-- Search & Filter Card Box -->
     <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
         <form method="GET" action="{{ route('admin.pegawai.index') }}" class="grid grid-cols-1 sm:grid-cols-12 gap-3">
             <!-- Search Input with Magnifier -->
-            <div class="sm:col-span-8 relative">
+            <div class="sm:col-span-6 relative">
                 <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <circle cx="11" cy="11" r="8"></circle>
@@ -33,17 +46,14 @@
                        class="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] focus:border-[#000d6b] outline-none text-slate-800 placeholder:text-slate-400 bg-white">
             </div>
 
-            <!-- Department Filter -->
-            <div class="sm:col-span-3">
+            <!-- Kantor Klien / Site Area Filter -->
+            <div class="sm:col-span-5">
                 <select name="department" onchange="this.form.submit()"
-                        class="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] focus:border-[#000d6b] outline-none text-slate-700 bg-white font-medium">
-                    <option value="">All Departments</option>
-                    @php
-                        $departments = \App\Models\Pegawai::whereNotNull('area_kerja')->where('area_kerja', '!=', '')->distinct()->pluck('area_kerja');
-                    @endphp
-                    @foreach($departments as $dept)
-                        <option value="{{ $dept }}" {{ request('department') == $dept ? 'selected' : '' }}>
-                            {{ $dept }}
+                        class="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] focus:border-[#000d6b] outline-none text-slate-800 bg-white font-bold">
+                    <option value="">🏢 Semua Kantor Klien / Site Area ({{ $kantorKliens->count() }} Site Project)</option>
+                    @foreach($kantorKliens as $kk)
+                        <option value="{{ $kk->nama_kantor }}" {{ request('department') == $kk->nama_kantor ? 'selected' : '' }}>
+                            🏢 {{ $kk->nama_kantor }} (Kode: {{ $kk->kode_kantor }})
                         </option>
                     @endforeach
                 </select>
@@ -51,11 +61,27 @@
 
             <!-- Submit Filter Button -->
             <div class="sm:col-span-1 flex gap-1">
-                <button type="submit" class="w-full py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition">
+                <button type="submit" class="w-full py-2.5 px-3 bg-[#000d6b] text-white text-xs font-bold rounded-lg shadow-sm hover:bg-[#001253] transition">
                     Filter
                 </button>
             </div>
         </form>
+    </div>
+
+    <!-- Filter Tabs Internal vs Outsource -->
+    <div class="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3">
+        <a href="{{ route('admin.pegawai.index') }}"
+           class="px-4 py-2 text-xs font-extrabold rounded-lg transition {{ !request('status_karyawan') ? 'bg-[#000d6b] text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+            Semua Pegawai
+        </a>
+        <a href="{{ route('admin.pegawai.index', array_merge(request()->query(), ['status_karyawan' => 'internal'])) }}"
+           class="px-4 py-2 text-xs font-extrabold rounded-lg transition {{ request('status_karyawan') == 'internal' ? 'bg-[#000d6b] text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+            Pegawai Asli PT ISW (Internal)
+        </a>
+        <a href="{{ route('admin.pegawai.index', array_merge(request()->query(), ['status_karyawan' => 'outsourcing'])) }}"
+           class="px-4 py-2 text-xs font-extrabold rounded-lg transition {{ request('status_karyawan') == 'outsourcing' ? 'bg-[#000d6b] text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+            Pegawai Outsource (Kantor Klien)
+        </a>
     </div>
 
     <!-- Corporate Styled Table Container -->
@@ -141,7 +167,17 @@
                             </td>
 
                             <!-- Actions Column -->
-                            <td class="py-4 px-5 text-right space-x-2 whitespace-nowrap">
+                            <td class="py-4 px-5 text-right space-x-1.5 whitespace-nowrap">
+                                <a href="{{ route('admin.pegawai.cetak-skk', $item->id) }}" target="_blank"
+                                   class="px-2.5 py-1.5 text-xs font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-md transition inline-block">
+                                    📜 Surat Ket. Kerja
+                                </a>
+
+                                <a href="{{ route('admin.pegawai.cetak-kontrak', $item->id) }}" target="_blank"
+                                   class="px-2.5 py-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md transition inline-block">
+                                    📄 Cetak SPK Kontrak
+                                </a>
+
                                 <a href="{{ route('admin.pegawai.edit', $item->id) }}"
                                    class="px-3 py-1.5 text-xs font-bold text-slate-700 hover:text-[#000d6b] bg-slate-100 hover:bg-slate-200 rounded-md transition inline-block">
                                     Edit

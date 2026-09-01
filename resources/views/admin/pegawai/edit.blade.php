@@ -114,6 +114,29 @@
             </div>
 
             <div>
+                <label for="status_karyawan" class="block font-semibold text-slate-700 mb-1">
+                    Kategori Status Karyawan <span class="text-rose-500">*</span>
+                </label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label class="flex items-center gap-2.5 p-3 border rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 border-slate-300">
+                        <input type="radio" name="status_karyawan" value="internal" {{ old('status_karyawan', $pegawai->status_karyawan ?: 'internal') == 'internal' ? 'checked' : '' }} onchange="toggleKantorKlien()" class="text-[#000d6b]">
+                        <div>
+                            <div class="font-extrabold text-slate-900 text-xs">🏢 Pegawai Asli PT ISW (Internal)</div>
+                            <div class="text-[11px] text-slate-500">Staff Head Office / Management ISW</div>
+                        </div>
+                    </label>
+
+                    <label class="flex items-center gap-2.5 p-3 border rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 border-slate-300">
+                        <input type="radio" name="status_karyawan" value="outsourcing" {{ old('status_karyawan', $pegawai->status_karyawan) == 'outsourcing' ? 'checked' : '' }} onchange="toggleKantorKlien()" class="text-[#000d6b]">
+                        <div>
+                            <div class="font-extrabold text-slate-900 text-xs">🤝 Pegawai Outsource</div>
+                            <div class="text-[11px] text-slate-500">Tenaga Kerja Placement Site Klien</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div>
                 <label for="divisi_id" class="block font-semibold text-slate-700 mb-1">
                     Division & Working Hours (Shift) <span class="text-rose-500">*</span>
                 </label>
@@ -125,6 +148,101 @@
                         </option>
                     @endforeach
                 </select>
+            </div>
+
+            <div id="kantor-klien-container" class="hidden">
+                <label for="area_kerja" class="block font-semibold text-slate-700 mb-1">
+                    Kantor Klien / Site Placement (Penempatan Kerja Outsourcing) <span class="text-rose-500">*</span>
+                </label>
+                <select name="area_kerja" id="area_kerja"
+                        class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-sm bg-white font-medium">
+                    <option value="">-- Pilih Kantor Klien / Site Project --</option>
+                    @foreach($kantorKliens as $kk)
+                        <option value="{{ $kk->nama_kantor }}" {{ old('area_kerja', $pegawai->area_kerja) == $kk->nama_kantor ? 'selected' : '' }}>
+                            {{ $kk->nama_kantor }} {{ $kk->kode_kantor ? '('.$kk->kode_kantor.')' : '' }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- Section Biodata Lengkap Pegawai -->
+            <div class="pt-4 border-t border-slate-200 space-y-4">
+                <h3 class="font-extrabold text-[#000d6b] text-sm flex items-center gap-2">
+                    <span>🪪</span> Biodata Pribadi Pegawai (KTP & Pendidikan)
+                </h3>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="nik" class="block font-semibold text-slate-700 mb-1">NIK (KTP)</label>
+                        <input type="text" name="nik" id="nik" value="{{ old('nik', $pegawai->nik) }}" maxlength="16" placeholder="e.g. 3174012345670001"
+                               class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-sm font-mono">
+                    </div>
+
+                    <div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label for="tempat_lahir" class="block font-semibold text-slate-700 mb-1">Tempat Lahir</label>
+                                <input type="text" name="tempat_lahir" id="tempat_lahir" value="{{ old('tempat_lahir', $pegawai->tempat_lahir) }}" placeholder="Jakarta"
+                                       class="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-sm">
+                            </div>
+                            <div>
+                                <label for="tanggal_lahir" class="block font-semibold text-slate-700 mb-1">Tgl Lahir</label>
+                                <input type="date" name="tanggal_lahir" id="tanggal_lahir" value="{{ old('tanggal_lahir', $pegawai->tanggal_lahir?->format('Y-m-d')) }}"
+                                       class="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-sm">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label for="jenis_kelamin" class="block font-semibold text-slate-700 mb-1">Jenis Kelamin</label>
+                        <select name="jenis_kelamin" id="jenis_kelamin" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 outline-none text-slate-800 text-sm bg-white font-medium">
+                            <option value="Laki-laki" {{ old('jenis_kelamin', $pegawai->jenis_kelamin ?: 'Laki-laki') == 'Laki-laki' ? 'selected' : '' }}>Laki-laki</option>
+                            <option value="Perempuan" {{ old('jenis_kelamin', $pegawai->jenis_kelamin) == 'Perempuan' ? 'selected' : '' }}>Perempuan</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="pendidikan_terakhir" class="block font-semibold text-slate-700 mb-1">Pendidikan Terakhir</label>
+                        <select name="pendidikan_terakhir" id="pendidikan_terakhir" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 outline-none text-slate-800 text-sm bg-white font-medium">
+                            <option value="SMA/SMK" {{ old('pendidikan_terakhir', $pegawai->pendidikan_terakhir ?: 'SMA/SMK') == 'SMA/SMK' ? 'selected' : '' }}>SMA / SMK</option>
+                            <option value="D3" {{ old('pendidikan_terakhir', $pegawai->pendidikan_terakhir) == 'D3' ? 'selected' : '' }}>D3 (Diploma)</option>
+                            <option value="S1" {{ old('pendidikan_terakhir', $pegawai->pendidikan_terakhir) == 'S1' ? 'selected' : '' }}>S1 (Sarjana)</option>
+                            <option value="S2" {{ old('pendidikan_terakhir', $pegawai->pendidikan_terakhir) == 'S2' ? 'selected' : '' }}>S2 (Magister)</option>
+                            <option value="SMP" {{ old('pendidikan_terakhir', $pegawai->pendidikan_terakhir) == 'SMP' ? 'selected' : '' }}>SMP</option>
+                            <option value="SD" {{ old('pendidikan_terakhir', $pegawai->pendidikan_terakhir) == 'SD' ? 'selected' : '' }}>SD</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="status_pernikahan" class="block font-semibold text-slate-700 mb-1">Status Pernikahan</label>
+                        <select name="status_pernikahan" id="status_pernikahan" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 outline-none text-slate-800 text-sm bg-white font-medium">
+                            <option value="Belum Menikah" {{ old('status_pernikahan', $pegawai->status_pernikahan ?: 'Belum Menikah') == 'Belum Menikah' ? 'selected' : '' }}>Belum Menikah</option>
+                            <option value="Menikah" {{ old('status_pernikahan', $pegawai->status_pernikahan) == 'Menikah' ? 'selected' : '' }}>Menikah</option>
+                            <option value="Cerai" {{ old('status_pernikahan', $pegawai->status_pernikahan) == 'Cerai' ? 'selected' : '' }}>Cerai</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="no_hp" class="block font-semibold text-slate-700 mb-1">No. HP / WhatsApp</label>
+                        <input type="text" name="no_hp" id="no_hp" value="{{ old('no_hp', $pegawai->no_hp) }}" placeholder="0812xxxxxxxx"
+                               class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-sm">
+                    </div>
+                    <div>
+                        <label for="kontak_darurat" class="block font-semibold text-slate-700 mb-1">Kontak Darurat (Keluarga)</label>
+                        <input type="text" name="kontak_darurat" id="kontak_darurat" value="{{ old('kontak_darurat', $pegawai->kontak_darurat) }}" placeholder="e.g. Ibu / Istri - 0813xxxxxxxx"
+                               class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="alamat" class="block font-semibold text-slate-700 mb-1">Alamat Lengkap (KTP)</label>
+                    <textarea name="alamat" id="alamat" rows="2" placeholder="Alamat rumah sesuai KTP..."
+                              class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-sm">{{ old('alamat', $pegawai->alamat) }}</textarea>
+                </div>
             </div>
 
             <div class="pt-3 border-t border-slate-100">
@@ -169,4 +287,18 @@
         </form>
     </div>
 </div>
+<script>
+    function toggleKantorKlien() {
+        const isOutsource = document.querySelector('input[name="status_karyawan"][value="outsourcing"]')?.checked;
+        const container = document.getElementById('kantor-klien-container');
+        if (container) {
+            if (isOutsource) {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+    }
+    document.addEventListener('DOMContentLoaded', toggleKantorKlien);
+</script>
 @endsection

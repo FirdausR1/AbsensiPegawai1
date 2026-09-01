@@ -82,4 +82,19 @@ class CutiController extends Controller
 
         return back()->with('success', 'Pengajuan cuti berhasil dibatalkan.');
     }
+
+    public function cetak(Cuti $cuti)
+    {
+        $pegawai = Auth::user();
+
+        // Admin can view any, employee can only view own cuti
+        if (!$pegawai->is_admin && !in_array($pegawai->role, ['super_admin', 'kepala_isw']) && $cuti->pegawai_id !== $pegawai->id) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        $kepala = \App\Models\Pegawai::where('role', 'kepala_isw')->first()
+            ?: \App\Models\Pegawai::where('is_admin', true)->first();
+
+        return view('cuti.cetak', compact('cuti', 'kepala'));
+    }
 }

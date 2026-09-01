@@ -107,7 +107,13 @@
                         <span class="section-bar"></span>
                         <h2 class="text-sm font-bold text-slate-900">Riwayat Pengajuan Cuti Anda</h2>
                     </div>
-                    <span class="text-xs text-slate-400 font-medium">{{ $cutis->total() }} Total Pengajuan</span>
+                    <div class="flex items-center gap-3">
+                        <a href="{{ route('export.cuti.sendiri') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition shadow-sm">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            Download Excel
+                        </a>
+                        <span class="text-xs text-slate-400 font-medium">{{ $cutis->total() }} Total Pengajuan</span>
+                    </div>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -148,7 +154,12 @@
                                         </span>
                                     </td>
 
-                                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                                    <td class="py-3.5 px-4 text-right whitespace-nowrap space-x-1">
+                                        <a href="{{ route('cuti.cetak', $item->id) }}" target="_blank"
+                                           class="px-2.5 py-1 bg-[#000d6b] hover:bg-[#001253] text-white text-[11px] font-bold rounded-lg transition inline-block">
+                                            📄 Surat Cuti (PDF)
+                                        </a>
+
                                         @if($item->isPending())
                                             <form method="POST" action="{{ route('cuti.cancel', $item->id) }}" class="inline"
                                                   onsubmit="return confirm('Batalkan pengajuan cuti ini?');">
@@ -158,8 +169,6 @@
                                                     Batalkan
                                                 </button>
                                             </form>
-                                        @else
-                                            <span class="text-slate-300 text-xs">-</span>
                                         @endif
                                     </td>
                                 </tr>

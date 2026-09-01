@@ -53,8 +53,8 @@
                     <option value="{{ $divisi->id }}" {{ (string) request('divisi_id') === (string) $divisi->id ? 'selected' : '' }}>{{ $divisi->nama }}</option>
                 @endforeach
             </select>
-            <select name="area" class="px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-xs bg-white">
-                <option value="">Semua Area</option>
+            <select name="area" class="px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-xs bg-white font-medium">
+                <option value="">Semua Kantor Klien</option>
                 @foreach($areas as $area)
                     <option value="{{ $area }}" {{ request('area') === $area ? 'selected' : '' }}>{{ $area }}</option>
                 @endforeach
@@ -65,6 +65,12 @@
             @endif
         </form>
     </div>
+
+    @if($currentUser->isDivisionAdmin())
+        <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs font-bold flex items-center justify-between">
+            <span>🔒 Akses Supervisor: Anda mengelola jadwal shift khusus untuk pegawai di <strong>{{ $currentUser->area_kerja ?: ($currentUser->divisi?->nama ?? 'Divisi Anda') }}</strong>.</span>
+        </div>
+    @endif
 
     <!-- Bulk Assign Form -->
     <div class="bg-gradient-to-r from-[#eef2ff] to-white rounded-xl border border-indigo-100 p-5 shadow-sm">
@@ -131,6 +137,81 @@
     @if(session('success'))
         <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-xs font-semibold">
             ✅ {{ session('success') }}
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-semibold">
+            ⚠️ {{ session('error') }}
+        </div>
+    @endif
+
+    <!-- Pending Shift Requests Section (Persetujuan / ACC Shift) -->
+    @if(isset($pendingRequests) && $pendingRequests->count() > 0)
+        <div class="bg-amber-50/70 border border-amber-200 rounded-2xl p-5 shadow-sm space-y-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+                    <h3 class="text-sm font-extrabold text-amber-900">
+                        Permohonan Shift & Tukar Shift Pegawai ({{ $pendingRequests->count() }} Menunggu ACC)
+                    </h3>
+                </div>
+                <span class="text-[11px] font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">
+                    Menunggu Persetujuan Admin/Danru
+                </span>
+            </div>
+
+            <div class="overflow-x-auto bg-white rounded-xl border border-amber-200 shadow-sm">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="bg-amber-100/60 text-amber-900 border-b border-amber-200">
+                            <th class="py-3 px-4 font-bold">Pegawai</th>
+                            <th class="py-3 px-4 font-bold">Tanggal</th>
+                            <th class="py-3 px-4 font-bold">Shift Diajukan</th>
+                            <th class="py-3 px-4 font-bold">Alasan / Catatan</th>
+                            <th class="py-3 px-4 font-bold text-right">Aksi Persetujuan (ACC)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-700">
+                        @foreach($pendingRequests as $req)
+                            <tr class="hover:bg-amber-50/40 transition">
+                                <td class="py-3 px-4">
+                                    <div class="font-bold text-slate-900">{{ $req->pegawai->nama }}</div>
+                                    <div class="text-[10px] text-slate-400">{{ $req->pegawai->area_kerja ?: ($req->pegawai->divisi?->nama ?? 'Staff') }}</div>
+                                </td>
+                                <td class="py-3 px-4 font-semibold text-slate-800 whitespace-nowrap">
+                                    {{ $req->tanggal->translatedFormat('d F Y (l)') }}
+                                </td>
+                                <td class="py-3 px-4 whitespace-nowrap">
+                                    <span class="inline-block px-2.5 py-1 rounded text-[10px] font-extrabold border {{ $req->getBadgeColor() }}">
+                                        {{ $req->getShiftLabel() }}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4 text-slate-600 max-w-xs truncate" title="{{ $req->catatan }}">
+                                    {{ $req->catatan ?: '–' }}
+                                </td>
+                                <td class="py-3 px-4 text-right whitespace-nowrap space-x-2">
+                                    <form method="POST" action="{{ route('admin.jadwal-shift.approve', $req->id) }}" class="inline"
+                                          onsubmit="return confirm('Setujui / ACC permohonan shift {{ $req->pegawai->nama }} pada tanggal {{ $req->tanggal->format('d/m/Y') }}?');">
+                                        @csrf
+                                        <button type="submit" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition">
+                                            ✓ Setujui (ACC)
+                                        </button>
+                                    </form>
+
+                                    <form method="POST" action="{{ route('admin.jadwal-shift.reject', $req->id) }}" class="inline"
+                                          onsubmit="return confirm('Tolak permohonan shift ini?');">
+                                        @csrf
+                                        <button type="submit" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded-lg transition">
+                                            ✕ Tolak
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
     @endif
 

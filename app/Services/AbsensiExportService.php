@@ -18,7 +18,7 @@ class AbsensiExportService
     // Baris data awal (tanggal 1) dan kolom sesuai template
     const FIRST_DATA_ROW = 12;
 
-    public function exportPegawai(Pegawai $pegawai, string $bulan): string
+    public function exportPegawai(Pegawai $pegawai, string $bulan, bool $includeLocation = false): string
     {
         $carbonMonth = Carbon::createFromFormat('Y-m', $bulan)->startOfMonth();
 
@@ -34,7 +34,7 @@ class AbsensiExportService
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle($pegawai->sheetTabName());
 
-        $this->buildSheet($sheet, $pegawai, $carbonMonth, $absensis);
+        $this->buildSheet($sheet, $pegawai, $carbonMonth, $absensis, $includeLocation);
 
         $filename = 'absensi_' . $pegawai->sheetTabName() . '_' . $bulan . '.xlsx';
         $tempPath = storage_path('app/export_temp/' . $filename);
@@ -49,13 +49,54 @@ class AbsensiExportService
         return $tempPath;
     }
 
-    protected function buildSheet($sheet, Pegawai $pegawai, Carbon $carbonMonth, $absensis): void
+    public function exportSemuaPegawai($pegawais, string $bulan, bool $includeLocation = false): string
+    {
+        $carbonMonth = Carbon::createFromFormat('Y-m', $bulan)->startOfMonth();
+        $spreadsheet = new Spreadsheet();
+
+        foreach ($pegawais as $index => $pegawai) {
+            $absensis = Absensi::where('pegawai_id', $pegawai->id)
+                ->whereBetween('tanggal', [
+                    $carbonMonth->copy()->startOfMonth()->toDateString(),
+                    $carbonMonth->copy()->endOfMonth()->toDateString(),
+                ])
+                ->get()
+                ->keyBy(fn($a) => Carbon::parse($a->tanggal)->day);
+
+            $sheet = $index === 0 ? $spreadsheet->getActiveSheet() : $spreadsheet->createSheet();
+
+            $sheetTitle = substr(preg_replace('/[^A-Za-z0-9 _-]/', '', $pegawai->nama), 0, 30);
+            $sheet->setTitle($sheetTitle ?: 'Pegawai ' . ($index + 1));
+
+            $this->buildSheet($sheet, $pegawai, $carbonMonth, $absensis, $includeLocation);
+        }
+
+        $filename = 'Rekap_Absensi_Semua_Pegawai_' . $bulan . '.xlsx';
+        $tempPath = storage_path('app/export_temp/' . $filename);
+
+        if (!is_dir(dirname($tempPath))) {
+            mkdir(dirname($tempPath), 0755, true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($tempPath);
+
+        return $tempPath;
+    }
+
+    protected function buildSheet($sheet, Pegawai $pegawai, Carbon $carbonMonth, $absensis, bool $includeLocation = false): void
     {
         $daysInMonth  = $carbonMonth->daysInMonth;
         $logoPath     = file_exists(public_path('images/Picture1.png'))
             ? public_path('images/Picture1.png')
             : (file_exists(public_path('images/logo.png')) ? public_path('images/logo.png') : public_path('images/logo.jpg'));
         $firstDataRow = 12;   // Baris 12 = tanggal 1 (sesuai template asli)
+
+        $approvedCutis = $pegawai->cutis()
+            ->where('status', 'approved')
+            ->where('tanggal_mulai', '<=', $carbonMonth->copy()->endOfMonth()->toDateString())
+            ->where('tanggal_selesai', '>=', $carbonMonth->copy()->startOfMonth()->toDateString())
+            ->get();
 
         // ── Lebar Kolom ────────────────────────────────────────────────────
         $sheet->getColumnDimension('A')->setWidth(14);  // Logo / NO
@@ -65,6 +106,11 @@ class AbsensiExportService
         $sheet->getColumnDimension('E')->setWidth(13);  // JAM PULANG
         $sheet->getColumnDimension('F')->setWidth(15);  // TTD PULANG
         $sheet->getColumnDimension('G')->setWidth(25);  // KETERANGAN
+        $sheet->getColumnDimension('H')->setWidth(38);  // LOKASI / KOORDINAT GPS
+
+        // Kontrol visibilitas kolom Lokasi (Kolom H):
+        // Jika tidak dicentang/includeLocation=false maka kolom H disembunyikan (hidden)
+        $sheet->getColumnDimension('H')->setVisible($includeLocation);
 
         // ── BARIS 1-3: Header Utama ─────────────────────────────────────────
         // Tinggi baris header
@@ -96,32 +142,32 @@ class AbsensiExportService
             }
         }
 
-        // === TENGAH: B1:E3 — "DAFTAR HADIR TENAGA KERJA" ===
-        $sheet->mergeCells('B1:E3');
+        // === TENGAH: B1:F3 — "DAFTAR HADIR TENAGA KERJA" ===
+        $sheet->mergeCells('B1:F3');
         $sheet->setCellValue('B1', 'DAFTAR HADIR TENAGA KERJA');
         $sheet->getStyle('B1')->applyFromArray([
             'font'      => ['bold' => true, 'size' => 16, 'color' => ['rgb' => '1a237e']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
         ]);
 
-        // === KANAN: F1:G3 — Kotak No. / Revisi / Berlaku ===
+        // === KANAN: G1:H3 — Kotak No. / Revisi / Berlaku ===
         $infoStyle = [
             'font'      => ['size' => 9],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER],
         ];
-        $sheet->setCellValue('F1', 'No.');
-        $sheet->setCellValue('G1', ':');
-        $sheet->setCellValue('F2', 'Revisi');
-        $sheet->setCellValue('G2', ':');
-        $sheet->setCellValue('F3', 'Berlaku');
-        $sheet->setCellValue('G3', ':');
+        $sheet->setCellValue('G1', 'No.');
+        $sheet->setCellValue('H1', ':');
+        $sheet->setCellValue('G2', 'Revisi');
+        $sheet->setCellValue('H2', ':');
+        $sheet->setCellValue('G3', 'Berlaku');
+        $sheet->setCellValue('H3', ':');
 
-        foreach (['F1','F2','F3','G1','G2','G3'] as $c) {
+        foreach (['G1','G2','G3','H1','H2','H3'] as $c) {
             $sheet->getStyle($c)->applyFromArray($infoStyle);
         }
 
         // Border kotak No./Revisi/Berlaku
-        $sheet->getStyle('F1:G3')->applyFromArray([
+        $sheet->getStyle('G1:H3')->applyFromArray([
             'borders' => [
                 'outline'     => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']],
                 'horizontal'  => ['borderStyle' => Border::BORDER_HAIR,  'color' => ['rgb' => '999999']],
@@ -130,7 +176,7 @@ class AbsensiExportService
         ]);
 
         // Border bawah seluruh header (pemisah)
-        $sheet->getStyle('A3:G3')->applyFromArray([
+        $sheet->getStyle('A3:H3')->applyFromArray([
             'borders' => ['bottom' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => '000000']]],
         ]);
 
@@ -148,12 +194,26 @@ class AbsensiExportService
             $sheet->setCellValue("A{$row}", $label);
             $sheet->setCellValue("B{$row}", ':');
             $sheet->getStyle("A{$row}")->applyFromArray($labelStyle);
-            $sheet->getStyle("B{$row}:G{$row}")->applyFromArray($valueStyle);
+            $sheet->getStyle("B{$row}:H{$row}")->applyFromArray($valueStyle);
         }
 
         $sheet->setCellValue('C5', $pegawai->nama);
         $sheet->setCellValue('C6', $carbonMonth->translatedFormat('F Y'));
-        $sheet->setCellValue('C7', $pegawai->area_kerja ?: '-');
+        
+        $isInternal = ($pegawai->status_karyawan === 'internal' || $pegawai->is_admin || in_array($pegawai->role, ['super_admin', 'kepala_isw']));
+
+        if ($isInternal) {
+            $rawArea = $pegawai->area_kerja;
+            if (empty($rawArea) || in_array($rawArea, ['Management / HR', 'Operasional', 'Satpam / Security', 'Cleaning Service'])) {
+                $areaKerjaText = "Head Office PT ISW" . ($rawArea ? " ({$rawArea})" : "");
+            } else {
+                $areaKerjaText = $rawArea;
+            }
+        } else {
+            $areaKerjaText = $pegawai->area_kerja ?: ($pegawai->divisi?->nama ?: 'Site Proyek');
+        }
+
+        $sheet->setCellValue('C7', $areaKerjaText);
 
         // ── BARIS 9-11: Header Tabel ────────────────────────────────────────
         $sheet->mergeCells('A9:A11');
@@ -163,6 +223,7 @@ class AbsensiExportService
         $sheet->mergeCells('E9:E11');
         $sheet->mergeCells('F9:F11');
         $sheet->mergeCells('G9:G11');
+        $sheet->mergeCells('H9:H11');
 
         $headers = [
             'A9' => 'NO',
@@ -172,6 +233,7 @@ class AbsensiExportService
             'E9' => 'JAM PULANG',
             'F9' => 'TANDA TANGAN',
             'G9' => 'KETERANGAN',
+            'H9' => 'LOKASI / KOORDINAT GPS',
         ];
 
         $headerStyle = [
@@ -210,18 +272,29 @@ class AbsensiExportService
             // Warna baris dan Keterangan
             $rowBg = null;
             $keterangan = '';
+            $lokasiText = '';
             $isAlpa = false;
 
-            $approvedCuti = $pegawai->getApprovedCutiOnDate($date);
+            $approvedCuti = $approvedCutis->first(function ($c) use ($date) {
+                $d = $date->toDateString();
+                return $c->tanggal_mulai->toDateString() <= $d && $c->tanggal_selesai->toDateString() >= $d;
+            });
             $jadwalShift  = $pegawai->getJadwalOnDate($date);
 
             if ($approvedCuti) {
-                $keterangan = "Cuti ({$approvedCuti->jumlah_hari} Hari - {$approvedCuti->tipe_cuti})";
-                $rowBg = 'e8eaf6'; // ungu muda
+                $isIzin = stripos($approvedCuti->tipe_cuti, 'izin') !== false || stripos($approvedCuti->tipe_cuti, 'ijin') !== false;
+                $prefix = $isIzin ? 'Izin' : 'Cuti';
+                $keterangan = "{$prefix} ({$approvedCuti->jumlah_hari} Hari - {$approvedCuti->tipe_cuti})";
+                $rowBg = $isIzin ? 'e0f2fe' : 'e8eaf6'; // soft blue / soft purple
             } elseif ($absensi && !empty($absensi->keterangan)) {
                 $keterangan = $absensi->keterangan;
-                if (stripos($keterangan, 'cuti') !== false) {
+                $ketLower = strtolower($keterangan);
+                if (str_contains($ketLower, 'cuti')) {
                     $rowBg = 'e8eaf6';
+                } elseif (str_contains($ketLower, 'izin') || str_contains($ketLower, 'ijin') || str_contains($ketLower, 'sakit')) {
+                    $rowBg = 'e0f2fe';
+                } elseif (str_contains($ketLower, 'dinas')) {
+                    $rowBg = 'e0f7fa';
                 }
             } elseif ($absensi && $absensi->jam_masuk) {
                 // Pegawai hadir (termasuk shift di hari libur/akhir pekan)
@@ -264,6 +337,25 @@ class AbsensiExportService
                 $isAlpa = true;
             }
 
+            // Bangun informasi Lokasi GPS untuk Kolom H
+            if ($absensi) {
+                $locArr = [];
+                if ($absensi->status_presensi === 'dinas_luar' || str_contains(strtolower($absensi->keterangan ?? ''), 'dinas')) {
+                    $locArr[] = "[DINAS LUAR]";
+                }
+                if (!empty($absensi->lokasi_masuk)) {
+                    $locArr[] = "Masuk: " . $absensi->lokasi_masuk;
+                }
+                if (!empty($absensi->lokasi_pulang)) {
+                    $locArr[] = "Pulang: " . $absensi->lokasi_pulang;
+                }
+                if (!empty($absensi->lokasi_absen) && empty($absensi->lokasi_masuk)) {
+                    $locArr[] = "GPS: " . $absensi->lokasi_absen;
+                }
+                if (!empty($locArr)) {
+                    $lokasiText = implode(" | ", $locArr);
+                }
+            }
 
             // Isi data
             $sheet->setCellValue("A{$row}", $day);
@@ -271,6 +363,7 @@ class AbsensiExportService
             $sheet->setCellValue("C{$row}", $absensi?->jam_masuk ? substr($absensi->jam_masuk, 0, 5) : '');
             $sheet->setCellValue("E{$row}", $absensi?->jam_pulang ? substr($absensi->jam_pulang, 0, 5) : '');
             $sheet->setCellValue("G{$row}", $keterangan);
+            $sheet->setCellValue("H{$row}", $lokasiText);
 
             // Style baris data
             $dataStyle = [
@@ -281,9 +374,10 @@ class AbsensiExportService
             if ($rowBg) {
                 $dataStyle['fill'] = ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $rowBg]];
             }
-            $sheet->getStyle("A{$row}:G{$row}")->applyFromArray($dataStyle);
+            $sheet->getStyle("A{$row}:H{$row}")->applyFromArray($dataStyle);
             $sheet->getStyle("B{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
             $sheet->getStyle("G{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+            $sheet->getStyle("H{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
             if ($isAlpa) {
                 $sheet->getStyle("G{$row}")->getFont()->setBold(true)->getColor()->setRGB('c5221f');
@@ -308,7 +402,7 @@ class AbsensiExportService
 
         // ── Footer Catatan ──────────────────────────────────────────────────
         $footerRow = $firstDataRow + $daysInMonth + 1;
-        $sheet->mergeCells("A{$footerRow}:G{$footerRow}");
+        $sheet->mergeCells("A{$footerRow}:H{$footerRow}");
         $sheet->setCellValue("A{$footerRow}", 'CATATAN : DAFTAR HADIR DIISI SETIAP HARI SESUAI KEHADIRAN. BUKAN DIRAPEL ATAU DIISI AKHIR BULAN.');
         $sheet->getStyle("A{$footerRow}")->applyFromArray([
             'font' => ['italic' => true, 'size' => 8, 'color' => ['rgb' => 'c62828']],
@@ -317,8 +411,8 @@ class AbsensiExportService
 
         // ── Tanda Tangan Pengguna Jasa & Personil ───────────────────────────
         $ttdRow = $footerRow + 3;
-        $sheet->mergeCells("A{$ttdRow}:C{$ttdRow}");
-        $sheet->mergeCells("E{$ttdRow}:G{$ttdRow}");
+        $sheet->mergeCells("A{$ttdRow}:D{$ttdRow}");
+        $sheet->mergeCells("E{$ttdRow}:H{$ttdRow}");
         $sheet->setCellValue("A{$ttdRow}", 'PENGGUNA JASA / PEJABAT YG TERKAIT');
         $sheet->setCellValue("E{$ttdRow}", 'Personil');
         foreach (["A{$ttdRow}", "E{$ttdRow}"] as $cell) {

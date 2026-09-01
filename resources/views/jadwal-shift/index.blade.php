@@ -158,18 +158,43 @@
         </div>
 
         <div class="space-y-4">
-            <!-- Info Card -->
-            @php
-                $shiftOptions = \App\Models\JadwalShift::getShiftInfoList($pegawai);
-            @endphp
-            <div class="bg-gradient-to-br from-amber-50 to-white border border-amber-200 rounded-2xl p-4 shadow-sm">
-                <div class="text-xs font-bold text-amber-800 mb-2">ℹ️ Ketentuan Shift ({{ $pegawai->area_kerja ?: ($pegawai->divisi?->nama ?? 'Umum') }})</div>
-                <ul class="text-[11px] text-amber-700 space-y-1.5 leading-relaxed">
-                    @foreach($shiftOptions as $key => $opt)
-                        <li>• {{ $opt['icon'] }} <strong>{{ $opt['label'] }}:</strong> {{ $opt['jam'] }}</li>
-                    @endforeach
-                    <li>• Hari tanpa jadwal = <strong>Libur otomatis</strong> (tidak ALPA)</li>
-                </ul>
+            <!-- Form Pengajuan Tukar / Perubahan Shift Card -->
+            <div id="request-card" class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                <div class="flex items-center gap-2">
+                    <span class="section-bar"></span>
+                    <h3 class="text-sm font-bold text-slate-900">Form Permohonan / Tukar Shift</h3>
+                </div>
+
+                <form id="request-form" method="POST" action="{{ route('jadwal-shift.request') }}" class="space-y-3 text-xs">
+                    @csrf
+                    <div>
+                        <label for="req-tanggal" class="block font-semibold text-slate-700 mb-1">Tanggal Shift <span class="text-rose-500">*</span></label>
+                        <input type="date" name="tanggal" id="req-tanggal" required value="{{ date('Y-m-d') }}"
+                               class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-xs font-medium">
+                    </div>
+
+                    <div>
+                        <label for="req-shift" class="block font-semibold text-slate-700 mb-1">Shift yang Diinginkan <span class="text-rose-500">*</span></label>
+                        <select name="tipe_shift" id="req-shift" required
+                                class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-xs bg-white font-medium">
+                            <option value="Pagi">☀️ Shift Pagi</option>
+                            <option value="Malam">🌙 Shift Malam</option>
+                            <option value="Siang">🌤️ Shift Siang</option>
+                            <option value="Libur">🏠 Hari Libur / Off</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="req-catatan" class="block font-semibold text-slate-700 mb-1">Alasan / Catatan Penukaran <span class="text-rose-500">*</span></label>
+                        <textarea name="catatan" id="req-catatan" rows="3" required placeholder="Contoh: Tukar shift dengan Sdr. Ahmad / Ada keperluan keluarga mendesak..."
+                                  class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-xs"></textarea>
+                    </div>
+
+                    <button type="submit"
+                            class="w-full py-2.5 px-4 bg-[#000d6b] hover:bg-[#001253] text-white text-xs font-bold rounded-lg shadow-sm transition tracking-wide">
+                        Kirim Pengajuan Shift
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -213,7 +238,15 @@
                                 @if($j->status === 'confirmed')
                                     <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Dikonfirmasi</span>
                                 @elseif($j->status === 'requested')
-                                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Menunggu Konfirmasi</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Menunggu ACC</span>
+                                        <form method="POST" action="{{ route('jadwal-shift.cancel', $j->id) }}" class="inline"
+                                              onsubmit="return confirm('Batalkan pengajuan shift ini?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-[10px] text-rose-600 hover:underline font-bold">Batal</button>
+                                        </form>
+                                    </div>
                                 @endif
                             </td>
                             <td class="py-3.5 px-5 text-slate-400 text-[11px]">{{ $j->catatan ?: '–' }}</td>

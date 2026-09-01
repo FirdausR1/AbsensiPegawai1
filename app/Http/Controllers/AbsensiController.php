@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Absensi;
+use App\Models\Pegawai;
 use App\Services\HolidayService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -10,25 +11,31 @@ use Illuminate\Support\Facades\Auth;
 
 class AbsensiController extends Controller
 {
-    public function __construct(
-        protected HolidayService $holidayService,
-    ) {}
+    public function __construct(protected HolidayService $holidayService) {}
 
     public function dashboard()
     {
         $pegawai = Auth::user();
-        $today = Carbon::today()->toDateString();
-        $startOfMonth = Carbon::now()->startOfMonth()->toDateString();
-        $endOfMonth = Carbon::now()->endOfMonth()->toDateString();
+        $now = Carbon::now();
+        $today = $now->toDateString();
 
+        // 1. Ambil record absensi hari ini (jika ada)
         $todayAbsensi = Absensi::where('pegawai_id', $pegawai->id)
             ->whereDate('tanggal', $today)
             ->first();
 
+        // 2. Ambil jadwal shift hari ini (jika ada)
+        $todayJadwal = $pegawai->getJadwalOnDate($now);
+
+        // 3. Ambil 7 data absensi terakhir
         $recentAbsensis = Absensi::where('pegawai_id', $pegawai->id)
-            ->latest('tanggal')
+            ->orderBy('tanggal', 'desc')
             ->take(7)
             ->get();
+
+        // 4. Hitung ringkasan statistik bulan ini
+        $startOfMonth = $now->copy()->startOfMonth()->toDateString();
+        $endOfMonth   = $now->copy()->endOfMonth()->toDateString();
 
         $stats = [
             'total_bulan_ini' => Absensi::where('pegawai_id', $pegawai->id)
@@ -42,7 +49,10 @@ class AbsensiController extends Controller
                 ->count(),
         ];
 
-        return view('dashboard.index', compact('pegawai', 'todayAbsensi', 'recentAbsensis', 'stats'));
+        $mostDiligent = Pegawai::getMostDiligentEmployee();
+        $activePengumumans = \App\Models\Pengumuman::latest()->take(3)->get();
+
+        return view('dashboard.index', compact('pegawai', 'todayAbsensi', 'todayJadwal', 'recentAbsensis', 'stats', 'mostDiligent', 'activePengumumans'));
     }
 
     public function riwayat(Request $request)
@@ -110,12 +120,6 @@ class AbsensiController extends Controller
                 return back()->with('error', 'Silakan buat tanda tangan digital dulu di halaman profil sebelum absen.');
             }
 
-            $divisi = $pegawai->getDivisi();
-            $isWajib = $divisi->isHariKerjaWajib($now, $this->holidayService);
-
-            // Jika divisi bukan 7_hari dan hari libur, tetap izinkan absen jika pegawai memang masuk (lembur/piket)
-            $isHolidayWeekend = $now->isWeekend() || $this->holidayService->isNationalHoliday($now);
-
             $absensi = Absensi::where('pegawai_id', $pegawai->id)
                 ->whereDate('tanggal', $today)
                 ->first();
@@ -124,19 +128,38 @@ class AbsensiController extends Controller
                 return back()->with('error', 'Kamu sudah absen masuk hari ini pukul ' . substr($absensi->jam_masuk, 0, 5) . ' WIB');
             }
 
-            if (!$absensi) {
-                Absensi::create([
-                    'pegawai_id' => $pegawai->id,
-                    'tanggal'    => $today,
-                    'jam_masuk'  => $now->format('H:i:s'),
+            $statusPresensi = $request->input('status_presensi', 'reguler');
+            $lokasi = $request->input('lokasi');
+            $fotoPath = null;
+
+            // Jika Absen Dinas Luar, wajib unggah foto bukti dinas luar
+            if ($statusPresensi === 'dinas_luar') {
+                $request->validate([
+                    'foto_dinas_luar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
                 ]);
-            } else {
-                $absensi->update(['jam_masuk' => $now->format('H:i:s')]);
+                $fotoPath = $request->file('foto_dinas_luar')->store('dinas_luar', 'public');
             }
 
-            return back()->with('success', 'Absen masuk berhasil dicatat pukul ' . $now->format('H:i') . ' WIB!');
+            $data = [
+                'pegawai_id'            => $pegawai->id,
+                'tanggal'               => $today,
+                'jam_masuk'             => $now->format('H:i:s'),
+                'status_presensi'       => $statusPresensi,
+                'lokasi_masuk'          => $lokasi,
+                'foto_dinas_luar_masuk' => $fotoPath,
+            ];
+
+            if (!$absensi) {
+                Absensi::create($data);
+            } else {
+                $absensi->update($data);
+            }
+
+            $lokasiMsg = $lokasi ? " (Lokasi: {$lokasi})" : "";
+            $dinasMsg = $statusPresensi === 'dinas_luar' ? " [DINAS LUAR - Foto Bukti Terupload]" : "";
+
+            return back()->with('success', "Absen masuk berhasil dicatat pukul {$now->format('H:i')} WIB{$dinasMsg}{$lokasiMsg}!");
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Error absenMasuk: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return back()->with('error', 'Gagal mencatat absen masuk: ' . $e->getMessage());
         }
     }
@@ -160,11 +183,26 @@ class AbsensiController extends Controller
                 return back()->with('error', 'Kamu sudah absen pulang hari ini pukul ' . substr($absensi->jam_pulang, 0, 5) . ' WIB');
             }
 
-            $absensi->update(['jam_pulang' => $now->format('H:i:s')]);
+            $lokasi = $request->input('lokasi');
+            $fotoPath = null;
 
-            return back()->with('success', 'Absen pulang berhasil dicatat pukul ' . $now->format('H:i') . ' WIB!');
+            if ($request->hasFile('foto_dinas_luar')) {
+                $request->validate([
+                    'foto_dinas_luar' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+                ]);
+                $fotoPath = $request->file('foto_dinas_luar')->store('dinas_luar', 'public');
+            }
+
+            $absensi->update([
+                'jam_pulang'             => $now->format('H:i:s'),
+                'lokasi_pulang'          => $lokasi,
+                'foto_dinas_luar_pulang' => $fotoPath ?: $absensi->foto_dinas_luar_pulang,
+            ]);
+
+            $lokasiMsg = $lokasi ? " (Lokasi: {$lokasi})" : "";
+
+            return back()->with('success', "Absen pulang berhasil dicatat pukul {$now->format('H:i')} WIB{$lokasiMsg}!");
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Error absenPulang: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return back()->with('error', 'Gagal mencatat absen pulang: ' . $e->getMessage());
         }
     }

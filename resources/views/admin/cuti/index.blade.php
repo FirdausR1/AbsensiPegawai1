@@ -19,6 +19,13 @@
                 Tinjau dan setujui permohonan cuti tahunan, cuti sakit, dan izin pegawai. Cuti yang disetujui otomatis masuk ke rekap absensi.
             </p>
         </div>
+
+        <div class="flex items-center gap-2">
+            <a href="{{ route('admin.export.cuti', request()->query()) }}" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition tracking-wide">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Download Excel Cuti
+            </a>
+        </div>
     </div>
 
     <!-- Stats Row Cards -->
@@ -139,7 +146,12 @@
                             </td>
 
                             <!-- Actions -->
-                            <td class="py-4 px-5 text-right space-x-2 whitespace-nowrap">
+                            <td class="py-4 px-5 text-right space-x-1.5 whitespace-nowrap">
+                                <a href="{{ route('admin.cuti.cetak', $item->id) }}" target="_blank"
+                                   class="px-2.5 py-1.5 bg-[#000d6b] hover:bg-[#001253] text-white text-xs font-bold rounded-lg transition inline-block">
+                                    📄 Surat Cuti PDF
+                                </a>
+
                                 @if($item->isPending())
                                     <form method="POST" action="{{ route('admin.cuti.approve', $item->id) }}" class="inline"
                                           onsubmit="return confirm('Setujui pengajuan cuti {{ $item->pegawai->nama }} selama {{ $item->jumlah_hari }} hari?');">
@@ -153,8 +165,6 @@
                                             class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded-lg transition">
                                         ✕ Tolak
                                     </button>
-                                @else
-                                    <span class="text-xs text-slate-400 font-medium">Selesai Diproses</span>
                                 @endif
                             </td>
                         </tr>

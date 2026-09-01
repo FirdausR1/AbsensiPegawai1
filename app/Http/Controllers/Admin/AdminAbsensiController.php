@@ -118,7 +118,15 @@ class AdminAbsensiController extends Controller
             ]
         );
 
-        return back()->with('success', "Absensi untuk {$pegawai->nama} tanggal {$date->format('d/m/Y')} berhasil disimpan/dikoreksi.");
+        $redirectUrl = $request->input('redirect_to');
+        if ($redirectUrl && str_contains($redirectUrl, '/admin')) {
+            return redirect($redirectUrl)->with('success', "Absensi untuk {$pegawai->nama} tanggal {$date->format('d/m/Y')} berhasil disimpan/dikoreksi.");
+        }
+
+        return redirect()->route('admin.absensi.index', [
+            'date'       => $date->toDateString(),
+            'pegawai_id' => $pegawai->id,
+        ])->with('success', "Absensi untuk {$pegawai->nama} tanggal {$date->format('d/m/Y')} berhasil disimpan/dikoreksi.");
     }
 
     /**

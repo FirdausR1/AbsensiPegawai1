@@ -21,7 +21,23 @@ class Pegawai extends Authenticatable
         'foto_path',
         'is_admin',
         'role',
-        'signature_updated_at',
+        'status_karyawan',
+        'gaji_pokok',
+        'tunjangan_jabatan',
+        'tunjangan_transport',
+        'status_bpjs_kesehatan',
+        'no_bpjs_kesehatan',
+        'status_bpjs_ketenagakerjaan',
+        'no_bpjs_ketenagakerjaan',
+        'nik',
+        'tempat_lahir',
+        'tanggal_lahir',
+        'jenis_kelamin',
+        'alamat',
+        'pendidikan_terakhir',
+        'no_hp',
+        'status_pernikahan',
+        'kontak_darurat',
     ];
 
     protected $hidden = [
@@ -31,6 +47,9 @@ class Pegawai extends Authenticatable
 
     protected $casts = [
         'is_admin' => 'boolean',
+        'status_bpjs_kesehatan' => 'boolean',
+        'status_bpjs_ketenagakerjaan' => 'boolean',
+        'tanggal_lahir' => 'date',
         'signature_updated_at' => 'datetime',
         'password' => 'hashed',
     ];
@@ -174,9 +193,120 @@ class Pegawai extends Authenticatable
         return !empty($this->signature_path);
     }
 
+    public function getSignatureUrl(): ?string
+    {
+        if (empty($this->signature_path)) {
+            return null;
+        }
+        if (str_starts_with($this->signature_path, 'http://') || str_starts_with($this->signature_path, 'https://')) {
+            return $this->signature_path;
+        }
+        return asset('storage/' . $this->signature_path);
+    }
+
     // Nama tab di Google Sheet. Kalau belum diset manual, default ke nama pegawai.
     public function sheetTabName(): string
     {
         return $this->sheet_tab_name ?: $this->nama;
+    }
+
+    public function tugasPeriodiks()
+    {
+        return $this->hasMany(TugasPeriodik::class);
+    }
+
+    public function suratPeringatans()
+    {
+        return $this->hasMany(SuratPeringatan::class);
+    }
+
+    public function isCleaningService(): bool
+    {
+        $name = strtolower(($this->area_kerja ?: '') . ' ' . ($this->divisi?->nama ?: ''));
+        return str_contains($name, 'cleaning') || str_contains($name, 'cs') || str_contains($name, 'kebersihan');
+    }
+
+    /**
+     * Dapatkan Pegawai Paling Rajin Bulan Ini berdasarkan:
+     * 1. Tidak Telat (0 keterlambatan / menit terlambat terkecil)
+     * 2. Paling banyak tugas periodik harian/mingguan yang dikerjakan
+     * 3. Total kehadiran paling tinggi
+     */
+    public static function getMostDiligentEmployee(?string $bulan = null, ?string $site = null)
+    {
+        $carbonMonth = $bulan ? \Carbon\Carbon::createFromFormat('Y-m', $bulan)->startOfMonth() : \Carbon\Carbon::now()->startOfMonth();
+        $startOfMonth = $carbonMonth->copy()->startOfMonth()->toDateString();
+        $endOfMonth = $carbonMonth->copy()->endOfMonth()->toDateString();
+
+        $query = static::with(['absensis' => function ($q) use ($startOfMonth, $endOfMonth) {
+            $q->whereBetween('tanggal', [$startOfMonth, $endOfMonth]);
+        }, 'tugasPeriodiks' => function ($q) use ($startOfMonth, $endOfMonth) {
+            $q->whereBetween('tanggal', [$startOfMonth, $endOfMonth]);
+        }])
+        ->where('role', '!=', 'super_admin')
+        ->where('is_admin', false);
+
+        if ($site) {
+            $query->where('area_kerja', 'like', "%{$site}%");
+        }
+
+        $pegawais = $query->get();
+
+        if ($pegawais->isEmpty()) {
+            return null;
+        }
+
+        $ranked = $pegawais->map(function ($p) {
+            $totalHadir = 0;
+            $totalMenitTerlambat = 0;
+            $totalHariTerlambat = 0;
+
+            foreach ($p->absensis as $a) {
+                if ($a->jam_masuk) {
+                    $totalHadir++;
+                    $menit = $a->getMenitTerlambat($p);
+                    if ($menit > 0) {
+                        $totalHariTerlambat++;
+                        $totalMenitTerlambat += $menit;
+                    }
+                }
+            }
+
+            $totalTugas = $p->tugasPeriodiks->count();
+
+            // Skor Kedisiplinan:
+            // +100 poin per Kehadiran Tepat Waktu
+            // -50 poin per Hari Terlambat
+            // -1 poin per Menit Terlambat
+            // +150 poin per Tugas Periodik Dikerjakan
+            $tepatWaktu = max(0, $totalHadir - $totalHariTerlambat);
+            $skor = ($tepatWaktu * 100) - ($totalHariTerlambat * 50) - $totalMenitTerlambat + ($totalTugas * 150);
+
+            return (object) [
+                'pegawai'               => $p,
+                'skor'                  => $skor,
+                'total_hadir'           => $totalHadir,
+                'total_hari_terlambat'  => $totalHariTerlambat,
+                'total_menit_terlambat' => $totalMenitTerlambat,
+                'total_tugas'           => $totalTugas,
+            ];
+        })->sortByDesc('skor')->values();
+
+        return $ranked->first();
+    }
+
+    public function getQrSignatureUrl(): string
+    {
+        if (!empty($this->qr_signature_path) && (str_starts_with($this->qr_signature_path, 'http://') || str_starts_with($this->qr_signature_path, 'https://'))) {
+            return $this->qr_signature_path;
+        }
+
+        $nama = $this->nama ?: 'Firdaus Romandhanu';
+        $jabatan = $this->jabatan_kepala ?: 'Direktur Utama PT Inti Sarana Wijaya';
+        $code = 'ISW-DIR-VERIFIED-' . strtoupper(substr(md5(($this->id ?: 1) . 'ISW'), 0, 10));
+
+        $qrText = "VERIFIKASI DIGITAL TANDA TANGAN RESMI\nPT INTI SARANA WIJAYA (ISW)\n----------------------------------------\nNama     : {$nama}\nJabatan  : {$jabatan}\nKode Ver : {$code}\nStatus   : DITANDATANGANI & SAH SECARA HUKUM";
+
+        return "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" . urlencode($qrText);
     }
 }

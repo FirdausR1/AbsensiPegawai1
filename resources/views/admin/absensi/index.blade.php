@@ -27,6 +27,18 @@
         </div>
     </div>
 
+    @if(session('success'))
+        <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-xs font-semibold">
+            ✅ {{ session('success') }}
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-semibold">
+            ⚠️ {{ session('error') }}
+        </div>
+    @endif
+
     <!-- Search & Filter Card Box -->
     <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
         <form method="GET" action="{{ route('admin.absensi.index') }}" class="grid grid-cols-1 sm:grid-cols-12 gap-3 text-xs sm:text-sm">
@@ -116,6 +128,11 @@
 
                             <!-- Status Badge Column -->
                             <td class="py-4 px-5 space-y-1">
+                                @if($item->status_presensi === 'dinas_luar')
+                                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
+                                        DINAS LUAR
+                                    </span>
+                                @endif
                                 @if(!empty($item->keterangan))
                                     <span class="inline-block px-2.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-800">
                                         {{ $item->keterangan }}
@@ -132,6 +149,18 @@
                                     <span class="inline-block px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-[#fce8e6] text-[#c5221f] tracking-wider uppercase">
                                         ALPA
                                     </span>
+                                @endif
+
+                                @if($item->lokasi_masuk || $item->lokasi_pulang)
+                                    <div class="text-[10px] text-slate-500 font-mono">
+                                        📍 {{ $item->lokasi_masuk ?: $item->lokasi_pulang }}
+                                    </div>
+                                @endif
+
+                                @if($item->foto_dinas_luar_masuk)
+                                    <a href="{{ asset('storage/'.$item->foto_dinas_luar_masuk) }}" target="_blank" class="inline-block text-[10px] text-indigo-700 font-bold hover:underline">
+                                        📷 Lihat Bukti Foto
+                                    </a>
                                 @endif
 
                                 @if($menitTerlambat > 0)
@@ -204,14 +233,16 @@
                 <label for="modal_pegawai_id" class="block font-semibold text-slate-700 mb-1">Pegawai <span class="text-rose-500">*</span></label>
                 <select name="pegawai_id" id="modal_pegawai_id" required class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 outline-none text-slate-800 font-medium">
                     @foreach($pegawais as $p)
-                        <option value="{{ $p->id }}">{{ $p->nama }} ({{ $p->area_kerja ?: 'Staff' }})</option>
+                        <option value="{{ $p->id }}" {{ request('pegawai_id') == $p->id ? 'selected' : '' }}>
+                            {{ $p->nama }} ({{ $p->area_kerja ?: 'Staff' }})
+                        </option>
                     @endforeach
                 </select>
             </div>
 
             <div>
                 <label for="modal_tanggal" class="block font-semibold text-slate-700 mb-1">Tanggal Absensi (Bisa Pilih Tanggal Terlewat) <span class="text-rose-500">*</span></label>
-                <input type="date" name="tanggal" id="modal_tanggal" value="{{ date('Y-m-d') }}" required
+                <input type="date" name="tanggal" id="modal_tanggal" value="{{ request('date', date('Y-m-d')) }}" required
                        class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 outline-none text-slate-800 font-medium">
             </div>
 
@@ -296,5 +327,12 @@
     function closeEditAbsensiModal() {
         document.getElementById('edit-absensi-modal').classList.add('hidden');
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('auto_open') === '1' || (urlParams.has('pegawai_id') && urlParams.has('date') && {{ $absensis->count() }} === 0)) {
+            openManualModal();
+        }
+    });
 </script>
 @endsection

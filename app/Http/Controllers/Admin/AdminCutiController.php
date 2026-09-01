@@ -136,4 +136,12 @@ class AdminCutiController extends Controller
 
         return back()->with('success', "Pengajuan cuti untuk {$cuti->pegawai->nama} telah ditolak.");
     }
+
+    public function cetak(Cuti $cuti)
+    {
+        $kepala = Pegawai::where('role', 'kepala_isw')->first()
+            ?: Pegawai::where('is_admin', true)->first();
+
+        return view('cuti.cetak', compact('cuti', 'kepala'));
+    }
 }
