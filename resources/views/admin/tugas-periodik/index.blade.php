@@ -20,10 +20,13 @@
             </p>
         </div>
 
-        <div>
+        <div class="flex items-center gap-3">
             <span class="px-3.5 py-2 bg-[#000d6b] text-white text-xs font-extrabold rounded-xl shadow-sm inline-block">
                 📋 Total {{ $tugasList->total() }} Bukti Foto Uploaded
             </span>
+            <a href="{{ route('admin.tugas-periodik.export-excel', request()->all()) }}" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-xl shadow-sm inline-block transition">
+                📥 Export Excel
+            </a>
         </div>
     </div>
 

@@ -113,6 +113,7 @@ Route::middleware('auth')->group(function () {
         // Review & Rating Tugas Periodik Cleaning Service (Admin)
         Route::get('/tugas-periodik', [\App\Http\Controllers\Admin\AdminTugasPeriodikController::class, 'index'])->name('tugas-periodik.index');
         Route::post('/tugas-periodik/{tugasPeriodik}/rate', [\App\Http\Controllers\Admin\AdminTugasPeriodikController::class, 'rateTask'])->name('tugas-periodik.rate');
+        Route::get('/tugas-periodik/export-excel', [\App\Http\Controllers\Admin\AdminTugasPeriodikController::class, 'exportExcel'])->name('tugas-periodik.export-excel');
 
         // Kelola Master Data Kantor Klien / Site Project (Admin)
         Route::get('/kantor-klien', [\App\Http\Controllers\Admin\AdminKantorKlienController::class, 'index'])->name('kantor-klien.index');
