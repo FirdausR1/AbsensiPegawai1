@@ -12,56 +12,55 @@ use Illuminate\Validation\Rule;
 class ProfileController extends Controller
 {
     /**
-     * Tampilkan form edit data diri pengguna yang sedang login.
+     * Tampilkan halaman profil & data diri pengguna yang sedang login.
      */
     public function showProfile()
     {
         $pegawai = Auth::user();
-        $startOfMonth = \Carbon\Carbon::now()->startOfMonth()->toDateString();
-        $endOfMonth = \Carbon\Carbon::now()->endOfMonth()->toDateString();
-
-        $stats = [
-            'total_bulan_ini' => \App\Models\Absensi::where('pegawai_id', $pegawai->id)
-                ->whereBetween('tanggal', [$startOfMonth, $endOfMonth])
-                ->whereNotNull('jam_masuk')
-                ->count(),
-            'total_lengkap' => \App\Models\Absensi::where('pegawai_id', $pegawai->id)
-                ->whereBetween('tanggal', [$startOfMonth, $endOfMonth])
-                ->whereNotNull('jam_masuk')
-                ->whereNotNull('jam_pulang')
-                ->count(),
-        ];
-
-        return view('profile.edit', compact('pegawai', 'stats'));
+        return view('profile.edit', compact('pegawai'));
     }
 
     /**
-     * Simpan perubahan data diri (Nama, Email, Area Kerja, Password).
+     * Simpan perubahan data diri lengkap (biodata).
      */
     public function updateProfile(Request $request)
     {
         $pegawai = Auth::user();
 
         $request->validate([
-            'nama'       => ['required', 'string', 'max:255'],
-            'email'      => ['required', 'string', 'email', 'max:255', Rule::unique('pegawais')->ignore($pegawai->id)],
-            'area_kerja' => ['nullable', 'string', 'max:255'],
-            'password'   => ['nullable', 'string', 'min:6', 'confirmed'],
-            'foto'       => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:4096'],
+            'nama'                => ['required', 'string', 'max:255'],
+            'email'               => ['required', 'string', 'email', 'max:255', Rule::unique('pegawais')->ignore($pegawai->id)],
+            'area_kerja'          => ['nullable', 'string', 'max:255'],
+            'foto'                => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:4096'],
+            'nik'                 => ['nullable', 'string', 'max:20'],
+            'tempat_lahir'        => ['nullable', 'string', 'max:255'],
+            'tanggal_lahir'       => ['nullable', 'date'],
+            'jenis_kelamin'       => ['nullable', 'string', 'max:20'],
+            'alamat'              => ['nullable', 'string'],
+            'pendidikan_terakhir' => ['nullable', 'string', 'max:50'],
+            'no_hp'               => ['nullable', 'string', 'max:50'],
+            'status_pernikahan'   => ['nullable', 'string', 'max:30'],
+            'kontak_darurat'      => ['nullable', 'string', 'max:255'],
         ], [
-            'nama.required'      => 'Nama lengkap wajib diisi.',
-            'email.required'     => 'Alamat email wajib diisi.',
-            'email.unique'       => 'Alamat email ini sudah digunakan oleh akun lain.',
-            'password.min'       => 'Password baru minimal 6 karakter.',
-            'password.confirmed' => 'Konfirmasi password baru tidak cocok.',
-            'foto.image'         => 'File yang diupload harus berupa gambar.',
-            'foto.max'           => 'Ukuran foto maksimal 4MB.',
+            'nama.required' => 'Nama lengkap wajib diisi.',
+            'email.required' => 'Email wajib diisi.',
+            'email.unique' => 'Email sudah digunakan akun lain.',
+            'foto.max' => 'Ukuran foto maksimal 4MB.',
         ]);
 
         $updateData = [
-            'nama'       => $request->nama,
-            'email'      => $request->email,
-            'area_kerja' => $request->area_kerja,
+            'nama'                => $request->nama,
+            'email'               => $request->email,
+            'area_kerja'          => $request->area_kerja,
+            'nik'                 => $request->nik,
+            'tempat_lahir'        => $request->tempat_lahir,
+            'tanggal_lahir'       => $request->tanggal_lahir,
+            'jenis_kelamin'       => $request->jenis_kelamin,
+            'alamat'              => $request->alamat,
+            'pendidikan_terakhir' => $request->pendidikan_terakhir,
+            'no_hp'               => $request->no_hp,
+            'status_pernikahan'   => $request->status_pernikahan,
+            'kontak_darurat'      => $request->kontak_darurat,
         ];
 
         // Handle foto upload
@@ -77,15 +76,50 @@ class ProfileController extends Controller
             $updateData['sheet_tab_name'] = $request->nama;
         }
 
-        if ($request->filled('password')) {
-            $updateData['password'] = Hash::make($request->password);
-        }
-
         $pegawai->update($updateData);
 
-        return back()->with('success', 'Data profil Anda berhasil diperbarui.');
+        return back()->with('success', 'Data diri berhasil diperbarui.');
     }
 
+    /**
+     * Form ganti password.
+     */
+    public function showChangePassword()
+    {
+        return view('profile.ganti-password');
+    }
+
+    /**
+     * Proses ganti password (wajib input password lama).
+     */
+    public function updatePassword(Request $request)
+    {
+        $pegawai = Auth::user();
+
+        $request->validate([
+            'password_lama'           => ['required', 'string'],
+            'password_baru'           => ['required', 'string', 'min:6', 'confirmed'],
+        ], [
+            'password_lama.required'       => 'Password lama wajib diisi.',
+            'password_baru.required'       => 'Password baru wajib diisi.',
+            'password_baru.min'            => 'Password baru minimal 6 karakter.',
+            'password_baru.confirmed'      => 'Konfirmasi password baru tidak cocok.',
+        ]);
+
+        if (!Hash::check($request->password_lama, $pegawai->password)) {
+            return back()->with('error', 'Password lama salah.');
+        }
+
+        $pegawai->update([
+            'password' => Hash::make($request->password_baru),
+        ]);
+
+        return back()->with('success', 'Password berhasil diubah.');
+    }
+
+    /**
+     * Halaman tanda tangan digital.
+     */
     public function edit()
     {
         return view('profile.signature', ['pegawai' => Auth::user()]);

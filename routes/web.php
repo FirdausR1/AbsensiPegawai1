@@ -52,6 +52,8 @@ Route::middleware('auth')->group(function () {
     Route::put('/profile', [ProfileController::class, 'updateProfile'])->name('profile.update');
     Route::get('/profile/signature', [ProfileController::class, 'edit'])->name('profile.signature');
     Route::post('/profile/signature', [ProfileController::class, 'saveSignature'])->name('profile.signature.save');
+    Route::get('/profile/ganti-password', [ProfileController::class, 'showChangePassword'])->name('profile.ganti-password');
+    Route::put('/profile/ganti-password', [ProfileController::class, 'updatePassword'])->name('profile.update-password');
 
     Route::post('/absen/masuk', [AbsensiController::class, 'absenMasuk'])->name('absen.masuk');
     Route::post('/absen/pulang', [AbsensiController::class, 'absenPulang'])->name('absen.pulang');
@@ -82,6 +84,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/pegawai/{pegawai}/cetak-kontrak', [\App\Http\Controllers\Admin\AdminPegawaiController::class, 'cetakKontrak'])->name('pegawai.cetak-kontrak');
         Route::get('/pegawai/cetak-skk-massal', [\App\Http\Controllers\Admin\AdminPegawaiController::class, 'cetakSkkMassal'])->name('pegawai.cetak-skk-massal');
         Route::get('/pegawai/{pegawai}/cetak-skk', [\App\Http\Controllers\Admin\AdminPegawaiController::class, 'cetakSkk'])->name('pegawai.cetak-skk');
+        Route::get('/pegawai/cetak-data-all', [\App\Http\Controllers\Admin\AdminPegawaiController::class, 'cetakDataAll'])->name('pegawai.cetak-data-all');
 
         // Kelola Persetujuan Cuti (Admin)
         Route::get('/cuti', [\App\Http\Controllers\Admin\AdminCutiController::class, 'index'])->name('cuti.index');

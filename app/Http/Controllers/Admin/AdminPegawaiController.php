@@ -405,4 +405,29 @@ class AdminPegawaiController extends Controller
 
         return view('admin.pegawai.cetak-skk-massal', compact('pegawais', 'kepala', 'siteName'));
     }
+
+    /**
+     * Cetak Data Diri Seluruh Pegawai (printable view)
+     */
+    public function cetakDataAll(Request $request)
+    {
+        $currentUser = auth()->user();
+        $query = Pegawai::with('divisi')->orderBy('nama');
+
+        if ($currentUser->isDivisionAdmin()) {
+            if ($currentUser->area_kerja) {
+                $query->where('area_kerja', 'like', "%{$currentUser->area_kerja}%");
+            } elseif ($currentUser->divisi_id) {
+                $query->where('divisi_id', $currentUser->divisi_id);
+            }
+        }
+
+        if ($site = $request->input('site')) {
+            $query->where('area_kerja', 'like', "%{$site}%");
+        }
+
+        $pegawais = $query->get();
+
+        return view('admin.pegawai.cetak-data-all', compact('pegawais'));
+    }
 }

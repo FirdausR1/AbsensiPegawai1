@@ -171,12 +171,20 @@ class AbsensiController extends Controller
             $now = Carbon::now();
             $today = $now->toDateString();
 
+            $yesterday = Carbon::parse($today)->subDay()->toDateString();
+
             $absensi = Absensi::where('pegawai_id', $pegawai->id)
-                ->whereDate('tanggal', $today)
+                ->where(function($query) use ($today, $yesterday) {
+                    $query->whereDate('tanggal', $today)
+                          ->orWhereDate('tanggal', $yesterday);
+                })
+                ->whereNotNull('jam_masuk')
+                ->whereNull('jam_pulang')
+                ->orderBy('tanggal', 'desc')
                 ->first();
 
-            if (!$absensi || !$absensi->jam_masuk) {
-                return back()->with('error', 'Kamu belum melakukan absen masuk hari ini.');
+            if (!$absensi) {
+                return back()->with('error', 'Kamu belum melakukan absen masuk atau sudah absen pulang sebelumnya.');
             }
 
             if ($absensi->jam_pulang) {
