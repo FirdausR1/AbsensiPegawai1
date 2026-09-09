@@ -186,13 +186,13 @@ class AbsensiController extends Controller
             $pegawai = Auth::user();
             $now = Carbon::now();
             $today = $now->toDateString();
+            $yesterday = Carbon::parse($today)->subDay()->toDateString();
 
             // 1. Ambil sesi absensi aktif (otomatis mendeteksi jika sedang shift jaga malam kemarin)
             $absensi = $pegawai->getActiveAbsensi($now);
 
             // Fallback: jika getActiveAbsensi null atau sudah terisi jam_pulang, cari unclosed kemarin atau hari ini
             if (!$absensi || $absensi->jam_pulang) {
-                $yesterday = Carbon::parse($today)->subDay()->toDateString();
                 $absensi = Absensi::where('pegawai_id', $pegawai->id)
                     ->where(function($query) use ($today, $yesterday) {
                         $query->whereDate('tanggal', $yesterday)
