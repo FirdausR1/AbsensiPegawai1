@@ -71,6 +71,9 @@ class AdminSlipGajiController extends Controller
             'no_bpjs_kesehatan'           => ['nullable', 'string', 'max:50'],
             'status_bpjs_ketenagakerjaan' => ['required', 'boolean'],
             'no_bpjs_ketenagakerjaan'     => ['nullable', 'string', 'max:50'],
+            'nama_bank'                   => ['nullable', 'string', 'max:50'],
+            'nomor_rekening'              => ['nullable', 'string', 'max:50'],
+            'nama_rekening'               => ['nullable', 'string', 'max:150'],
         ]);
 
         $pegawai->update([
@@ -81,9 +84,12 @@ class AdminSlipGajiController extends Controller
             'no_bpjs_kesehatan'           => $request->no_bpjs_kesehatan,
             'status_bpjs_ketenagakerjaan' => $request->status_bpjs_ketenagakerjaan,
             'no_bpjs_ketenagakerjaan'     => $request->no_bpjs_ketenagakerjaan,
+            'nama_bank'                   => $request->nama_bank,
+            'nomor_rekening'              => $request->nomor_rekening,
+            'nama_rekening'               => $request->nama_rekening,
         ]);
 
-        return back()->with('success', "Data gaji & BPJS untuk {$pegawai->nama} berhasil diperbarui.");
+        return back()->with('success', "Data gaji, BPJS & rekening untuk {$pegawai->nama} berhasil diperbarui.");
     }
 
     public function updateSalaryAndBpjsMassal(Request $request)

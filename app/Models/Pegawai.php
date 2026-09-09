@@ -38,6 +38,9 @@ class Pegawai extends Authenticatable
         'no_hp',
         'status_pernikahan',
         'kontak_darurat',
+        'nama_bank',
+        'nomor_rekening',
+        'nama_rekening',
     ];
 
     protected $hidden = [
@@ -179,6 +182,12 @@ class Pegawai extends Authenticatable
         return str_contains($name, 'satpam') || str_contains($name, 'security') || str_contains($name, 'cleaning') || str_contains($name, 'shift') || str_contains($name, 'danru');
     }
 
+    public function isSatpam(): bool
+    {
+        $name = strtolower(($this->area_kerja ?: '') . ' ' . ($this->divisi?->nama ?: ''));
+        return str_contains($name, 'satpam') || str_contains($name, 'security') || str_contains($name, 'danru');
+    }
+
     public function getInitials(): string
     {
         $words = explode(' ', trim($this->nama ?? 'Pegawai'));
@@ -308,5 +317,89 @@ class Pegawai extends Authenticatable
         $qrText = "VERIFIKASI DIGITAL TANDA TANGAN RESMI\nPT INTI SARANA WIJAYA (ISW)\n----------------------------------------\nNama     : {$nama}\nJabatan  : {$jabatan}\nKode Ver : {$code}\nStatus   : DITANDATANGANI & SAH SECARA HUKUM";
 
         return "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" . urlencode($qrText);
+    }
+
+    /**
+     * Dapatkan record absensi yang sedang aktif (berlangsung / belum pulang).
+     * Jika belum ada sesi hari ini, cek apakah ada sesi jaga malam dari hari kemarin yang belum checkout.
+     */
+    public function getActiveAbsensi(\Carbon\Carbon $now): ?Absensi
+    {
+        $today = $now->toDateString();
+        $todayAbsensi = $this->absensis()
+            ->whereDate('tanggal', $today)
+            ->first();
+
+        // 1. Jika hari ini sudah ada record absensi dan sudah jam_masuk tapi belum jam_pulang:
+        if ($todayAbsensi && $todayAbsensi->jam_masuk && !$todayAbsensi->jam_pulang) {
+            return $todayAbsensi;
+        }
+
+        // 2. Jika hari ini belum ada record atau belum jam_masuk:
+        // Cek apakah kemarin ada sesi dinas malam yang belum di-checkout
+        if (!$todayAbsensi || !$todayAbsensi->jam_masuk) {
+            $yesterday = $now->copy()->subDay()->toDateString();
+            $yesterdayAbsensi = $this->absensis()
+                ->whereDate('tanggal', $yesterday)
+                ->whereNotNull('jam_masuk')
+                ->whereNull('jam_pulang')
+                ->first();
+
+            if ($yesterdayAbsensi) {
+                // Cek apakah ini merupakan shift malam / lintas hari yang valid:
+                $yesterdayJadwal = $this->getJadwalOnDate($now->copy()->subDay());
+
+                $isNightShift = false;
+                if ($yesterdayJadwal && $yesterdayJadwal->tipe_shift === JadwalShift::TIPE_MALAM) {
+                    $isNightShift = true;
+                } elseif ($yesterdayJadwal) {
+                    $jm = $yesterdayJadwal->getJamMasukEfektif();
+                    $jp = $yesterdayJadwal->getJamPulangEfektif();
+                    if ($jm && $jp && $jp < $jm) {
+                        $isNightShift = true;
+                    }
+                }
+
+                $masukHour = (int) substr($yesterdayAbsensi->jam_masuk, 0, 2);
+                $isLateCheckIn = ($masukHour >= 16);
+
+                // Pegawai shift (satpam/security/cs), jadwal shift malam, atau jam masuk sore/malam:
+                if ($isNightShift || $this->isShiftWorker() || $isLateCheckIn) {
+                    // Batas waktu wajar checkout pagi adalah sebelum jam 15:00 hari ini
+                    // dan durasi dinas sejak jam masuk kemarin tidak lebih dari 18 jam
+                    $masukDateTime = \Carbon\Carbon::parse($yesterday . ' ' . $yesterdayAbsensi->jam_masuk);
+                    if ($now->hour < 15 && $now->diffInHours($masukDateTime) <= 18) {
+                        return $yesterdayAbsensi;
+                    }
+                }
+            }
+        }
+
+        // Jika hari ini sudah lengkap (masuk & pulang), kembalikan record hari ini
+        if ($todayAbsensi) {
+            return $todayAbsensi;
+        }
+
+        return null;
+    }
+
+    public function hasActiveOvernightShift(\Carbon\Carbon $now): bool
+    {
+        $active = $this->getActiveAbsensi($now);
+        if (!$active || !empty($active->jam_pulang)) {
+            return false;
+        }
+        $activeTgl = $active->tanggal instanceof \Carbon\Carbon ? $active->tanggal->toDateString() : substr((string)$active->tanggal, 0, 10);
+        return $activeTgl === $now->copy()->subDay()->toDateString();
+    }
+
+    public function getBankInfoFormatted(): string
+    {
+        if (empty($this->nomor_rekening)) {
+            return 'Belum Diisi';
+        }
+        $bank = $this->nama_bank ?: 'Bank';
+        $an = $this->nama_rekening ? " (a.n. {$this->nama_rekening})" : "";
+        return "{$bank} - {$this->nomor_rekening}{$an}";
     }
 }

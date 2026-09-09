@@ -57,6 +57,8 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/absen/masuk', [AbsensiController::class, 'absenMasuk'])->name('absen.masuk');
     Route::post('/absen/pulang', [AbsensiController::class, 'absenPulang'])->name('absen.pulang');
+    Route::post('/absen/libur', [AbsensiController::class, 'absenLibur'])->name('absen.libur');
+    Route::post('/absen/batal-libur', [AbsensiController::class, 'batalLibur'])->name('absen.batal-libur');
 
     // Export Excel
     Route::get('/export/{bulan?}', [ExportController::class, 'exportSendiri'])->name('export.sendiri');

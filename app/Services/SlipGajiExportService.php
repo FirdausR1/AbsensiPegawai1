@@ -50,6 +50,8 @@ class SlipGajiExportService
         $sheet->getColumnDimension('O')->setWidth(20);  // TAKE HOME PAY (THP)
         $sheet->getColumnDimension('P')->setWidth(16);  // NO BPJS KES
         $sheet->getColumnDimension('Q')->setWidth(16);  // NO BPJS TK
+        $sheet->getColumnDimension('R')->setWidth(14);  // NAMA BANK
+        $sheet->getColumnDimension('S')->setWidth(24);  // NO REKENING & A.N
 
         // ── Kop Surat Perusahaan ─────────────────────────────────
         $logoPath = file_exists(public_path('images/Picture1.png'))
@@ -147,8 +149,14 @@ class SlipGajiExportService
         $sheet->setCellValue('P6', "NO BPJS KES");
         $sheet->setCellValue('Q6', "NO BPJS TK");
 
+        // Group Rekening Bank
+        $sheet->mergeCells('R5:S5');
+        $sheet->setCellValue('R5', "INFORMASI REKENING BANK");
+        $sheet->setCellValue('R6', "NAMA BANK");
+        $sheet->setCellValue('S6', "NO REKENING & A.N");
+
         // Style Header Utama (Baris 5)
-        $sheet->getStyle('A5:Q5')->applyFromArray([
+        $sheet->getStyle('A5:S5')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'ffffff'], 'size' => 9],
             'fill' => [
                 'fillType'   => Fill::FILL_SOLID,
@@ -164,7 +172,7 @@ class SlipGajiExportService
         ]);
 
         // Style Sub Header (Baris 6)
-        $sheet->getStyle('A6:Q6')->applyFromArray([
+        $sheet->getStyle('A6:S6')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'ffffff'], 'size' => 8.5],
             'fill' => [
                 'fillType'   => Fill::FILL_SOLID,
@@ -237,10 +245,12 @@ class SlipGajiExportService
 
             $sheet->setCellValueExplicit('P' . $row, $p->no_bpjs_kesehatan ?: ($p->status_bpjs_kesehatan ? 'Terdaftar (1%)' : '-'), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValueExplicit('Q' . $row, $p->no_bpjs_ketenagakerjaan ?: ($p->status_bpjs_ketenagakerjaan ? 'Terdaftar (3%)' : '-'), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValueExplicit('R' . $row, $p->nama_bank ?: '-', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValueExplicit('S' . $row, $p->nomor_rekening ? ($p->nomor_rekening . ($p->nama_rekening ? " ({$p->nama_rekening})" : '')) : '-', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
 
             // Styling baris bergantian (Zebra)
             if ($no % 2 == 0) {
-                $sheet->getStyle("A{$row}:Q{$row}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('f8fafc');
+                $sheet->getStyle("A{$row}:S{$row}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('f8fafc');
             }
 
             $row++;
@@ -266,9 +276,11 @@ class SlipGajiExportService
         $sheet->setCellValue("O{$row}", "=SUM(O7:O{$lastDataRow})");
         $sheet->setCellValue("P{$row}", "");
         $sheet->setCellValue("Q{$row}", "");
+        $sheet->setCellValue("R{$row}", "");
+        $sheet->setCellValue("S{$row}", "");
 
         // Style Baris Total
-        $sheet->getStyle("A{$row}:Q{$row}")->applyFromArray([
+        $sheet->getStyle("A{$row}:S{$row}")->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => '000d6b'], 'size' => 9.5],
             'fill' => [
                 'fillType'   => Fill::FILL_SOLID,
@@ -285,7 +297,7 @@ class SlipGajiExportService
         $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // ── Number Formatting & Borders ───────────────────────────
-        $sheet->getStyle("A7:Q{$lastDataRow}")->applyFromArray([
+        $sheet->getStyle("A7:S{$lastDataRow}")->applyFromArray([
             'borders' => [
                 'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'cbd5e1']],
             ],
@@ -294,7 +306,8 @@ class SlipGajiExportService
         ]);
 
         $sheet->getStyle("A7:A{$lastDataRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle("P7:Q{$lastDataRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("P7:R{$lastDataRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("S7:S{$lastDataRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
         // Format Currency / Accounting Rupiah
         $sheet->getStyle("E7:O{$row}")->getNumberFormat()->setFormatCode('#,##0');

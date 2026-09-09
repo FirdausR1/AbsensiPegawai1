@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Absensi;
 use App\Models\Pegawai;
+use App\Models\JadwalShift;
 use App\Services\HolidayService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -19,13 +20,21 @@ class AbsensiController extends Controller
         $now = Carbon::now();
         $today = $now->toDateString();
 
-        // 1. Ambil record absensi hari ini (jika ada)
+        // 1. Ambil sesi absensi aktif (termasuk jika kemarin dinas jaga malam dan belum checkout pagi ini)
+        $activeAbsensi = $pegawai->getActiveAbsensi($now);
+        $isOvernightShift = $pegawai->hasActiveOvernightShift($now);
+
+        // Record absensi hari ini (jika ada)
         $todayAbsensi = Absensi::where('pegawai_id', $pegawai->id)
             ->whereDate('tanggal', $today)
             ->first();
 
         // 2. Ambil jadwal shift hari ini (jika ada)
         $todayJadwal = $pegawai->getJadwalOnDate($now);
+
+        // Cek apakah hari ini berstatus Libur
+        $isTodayLibur = ($todayAbsensi && (str_contains(strtolower($todayAbsensi->keterangan ?? ''), 'libur') || $todayAbsensi->status_presensi === 'libur'))
+            || ($todayJadwal && $todayJadwal->isLibur() && (!$todayAbsensi || !$todayAbsensi->jam_masuk));
 
         // 3. Ambil 7 data absensi terakhir
         $recentAbsensis = Absensi::where('pegawai_id', $pegawai->id)
@@ -52,7 +61,7 @@ class AbsensiController extends Controller
         $mostDiligent = Pegawai::getMostDiligentEmployee();
         $activePengumumans = \App\Models\Pengumuman::latest()->take(3)->get();
 
-        return view('dashboard.index', compact('pegawai', 'todayAbsensi', 'todayJadwal', 'recentAbsensis', 'stats', 'mostDiligent', 'activePengumumans'));
+        return view('dashboard.index', compact('pegawai', 'todayAbsensi', 'activeAbsensi', 'isOvernightShift', 'todayJadwal', 'isTodayLibur', 'recentAbsensis', 'stats', 'mostDiligent', 'activePengumumans'));
     }
 
     public function riwayat(Request $request)
@@ -120,6 +129,13 @@ class AbsensiController extends Controller
                 return back()->with('error', 'Silakan buat tanda tangan digital dulu di halaman profil sebelum absen.');
             }
 
+            // Jika masih ada sesi shift malam aktif dari kemarin yang belum di-checkout, larang absen masuk baru!
+            if ($pegawai->hasActiveOvernightShift($now)) {
+                $overnight = $pegawai->getActiveAbsensi($now);
+                $tglKemarin = Carbon::parse($overnight->tanggal)->translatedFormat('d F Y');
+                return back()->with('error', "Anda masih tercatat dalam sesi dinas jaga malam (Shift {$tglKemarin}, masuk pukul " . substr($overnight->jam_masuk, 0, 5) . " WIB). Silakan klik Catat Absen Pulang terlebih dahulu untuk menyelesaikan tugas malam Anda sebelum memulai shift baru!");
+            }
+
             $absensi = Absensi::where('pegawai_id', $pegawai->id)
                 ->whereDate('tanggal', $today)
                 ->first();
@@ -171,24 +187,29 @@ class AbsensiController extends Controller
             $now = Carbon::now();
             $today = $now->toDateString();
 
-            $yesterday = Carbon::parse($today)->subDay()->toDateString();
+            // 1. Ambil sesi absensi aktif (otomatis mendeteksi jika sedang shift jaga malam kemarin)
+            $absensi = $pegawai->getActiveAbsensi($now);
 
-            $absensi = Absensi::where('pegawai_id', $pegawai->id)
-                ->where(function($query) use ($today, $yesterday) {
-                    $query->whereDate('tanggal', $today)
-                          ->orWhereDate('tanggal', $yesterday);
-                })
-                ->whereNotNull('jam_masuk')
-                ->whereNull('jam_pulang')
-                ->orderBy('tanggal', 'desc')
-                ->first();
+            // Fallback: jika getActiveAbsensi null atau sudah terisi jam_pulang, cari unclosed kemarin atau hari ini
+            if (!$absensi || $absensi->jam_pulang) {
+                $yesterday = Carbon::parse($today)->subDay()->toDateString();
+                $absensi = Absensi::where('pegawai_id', $pegawai->id)
+                    ->where(function($query) use ($today, $yesterday) {
+                        $query->whereDate('tanggal', $yesterday)
+                              ->orWhereDate('tanggal', $today);
+                    })
+                    ->whereNotNull('jam_masuk')
+                    ->whereNull('jam_pulang')
+                    ->orderBy('tanggal', 'asc') // Utamakan yang lebih awal (kemarin dulu)
+                    ->first();
+            }
 
             if (!$absensi) {
                 return back()->with('error', 'Kamu belum melakukan absen masuk atau sudah absen pulang sebelumnya.');
             }
 
             if ($absensi->jam_pulang) {
-                return back()->with('error', 'Kamu sudah absen pulang hari ini pukul ' . substr($absensi->jam_pulang, 0, 5) . ' WIB');
+                return back()->with('error', 'Kamu sudah absen pulang untuk sesi ini pukul ' . substr($absensi->jam_pulang, 0, 5) . ' WIB');
             }
 
             $lokasi = $request->input('lokasi');
@@ -207,11 +228,133 @@ class AbsensiController extends Controller
                 'foto_dinas_luar_pulang' => $fotoPath ?: $absensi->foto_dinas_luar_pulang,
             ]);
 
+            // Jika sesi yang ditutup adalah shift malam kemarin, dan sebelumnya sempat terjadi dobel masuk di pagi hari ini tanpa pulang, bersihkan record dobel masuk tersebut
+            $isClosedYesterday = Carbon::parse($absensi->tanggal)->toDateString() === $yesterday;
+
+            if ($isClosedYesterday) {
+                $accidentalDuplicate = Absensi::where('pegawai_id', $pegawai->id)
+                    ->whereDate('tanggal', $today)
+                    ->where('id', '!=', $absensi->id)
+                    ->whereNull('jam_pulang')
+                    ->where('jam_masuk', '<=', '11:00:00')
+                    ->first();
+
+                if ($accidentalDuplicate) {
+                    $accidentalDuplicate->delete();
+                }
+            }
+
             $lokasiMsg = $lokasi ? " (Lokasi: {$lokasi})" : "";
+
+            if ($isClosedYesterday) {
+                $tglKemarin = Carbon::parse($absensi->tanggal)->translatedFormat('d F Y');
+                return back()->with('success', "Absen pulang tugas jaga malam (Shift {$tglKemarin}) berhasil dicatat pukul {$now->format('H:i')} WIB{$lokasiMsg}!");
+            }
 
             return back()->with('success', "Absen pulang berhasil dicatat pukul {$now->format('H:i')} WIB{$lokasiMsg}!");
         } catch (\Throwable $e) {
             return back()->with('error', 'Gagal mencatat absen pulang: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Khusus Satpam: Lapor mandiri bahwa hari ini adalah jadwal libur / lepas dinas.
+     */
+    public function absenLibur(Request $request)
+    {
+        try {
+            $pegawai = Auth::user();
+
+            if (!$pegawai->isSatpam()) {
+                return back()->with('error', 'Fitur lapor hari libur ini khusus untuk petugas Satpam / Security.');
+            }
+
+            $now = Carbon::now();
+            $today = $now->toDateString();
+
+            if ($pegawai->hasActiveOvernightShift($now)) {
+                return back()->with('error', 'Anda masih memiliki sesi jaga malam kemarin yang belum absen pulang. Harap selesaikan absen pulang terlebih dahulu.');
+            }
+
+            $todayAbsensi = Absensi::where('pegawai_id', $pegawai->id)
+                ->whereDate('tanggal', $today)
+                ->first();
+
+            if ($todayAbsensi && $todayAbsensi->jam_masuk) {
+                return back()->with('error', 'Anda sudah melakukan absen masuk hari ini. Tidak dapat mengubah status menjadi Libur.');
+            }
+
+            if (!$todayAbsensi) {
+                Absensi::create([
+                    'pegawai_id'      => $pegawai->id,
+                    'tanggal'         => $today,
+                    'jam_masuk'       => null,
+                    'jam_pulang'      => null,
+                    'keterangan'      => 'Libur (Jadwal)',
+                    'status_presensi' => 'libur',
+                ]);
+            } else {
+                $todayAbsensi->update([
+                    'keterangan'      => 'Libur (Jadwal)',
+                    'status_presensi' => 'libur',
+                ]);
+            }
+
+            JadwalShift::updateOrCreate(
+                [
+                    'pegawai_id' => $pegawai->id,
+                    'tanggal'    => $today,
+                ],
+                [
+                    'tipe_shift' => JadwalShift::TIPE_LIBUR,
+                    'jam_masuk'  => null,
+                    'jam_pulang' => null,
+                    'status'     => 'confirmed',
+                    'catatan'    => 'Konfirmasi libur mandiri oleh Satpam',
+                ]
+            );
+
+            return back()->with('success', 'Status hari ini berhasil dicatat sebagai LIBUR (Off Duty). Selamat beristirahat!');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Gagal mencatat status libur: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Khusus Satpam: Batalkan status libur hari ini jika mendadak ada tugas/piket ganti.
+     */
+    public function batalLibur(Request $request)
+    {
+        try {
+            $pegawai = Auth::user();
+
+            if (!$pegawai->isSatpam()) {
+                return back()->with('error', 'Akses ditolak.');
+            }
+
+            $now = Carbon::now();
+            $today = $now->toDateString();
+
+            $todayAbsensi = Absensi::where('pegawai_id', $pegawai->id)
+                ->whereDate('tanggal', $today)
+                ->first();
+
+            if ($todayAbsensi && empty($todayAbsensi->jam_masuk)) {
+                $todayAbsensi->delete();
+            }
+
+            $jadwal = JadwalShift::where('pegawai_id', $pegawai->id)
+                ->whereDate('tanggal', $today)
+                ->where('tipe_shift', JadwalShift::TIPE_LIBUR)
+                ->first();
+
+            if ($jadwal) {
+                $jadwal->delete();
+            }
+
+            return back()->with('success', 'Status libur berhasil dibatalkan. Anda sekarang dapat mencatat absen masuk.');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Gagal membatalkan status libur: ' . $e->getMessage());
         }
     }
 }

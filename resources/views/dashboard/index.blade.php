@@ -72,20 +72,98 @@
     </div>
 
     {{-- Absen Masuk & Pulang --}}
+    {{-- Banner Khusus Sesi Jaga Malam Lintas Hari --}}
+    @if($isOvernightShift && $activeAbsensi)
+        <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 flex items-center justify-between gap-3 text-xs shadow-sm">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🌙</span>
+                <div>
+                    <h3 class="font-bold text-indigo-950 text-sm">Sesi Jaga Malam Aktif</h3>
+                    <p class="text-indigo-700 mt-0.5">
+                        Anda sedang bertugas jaga malam shift <strong>{{ \Carbon\Carbon::parse($activeAbsensi->tanggal)->translatedFormat('l, d F Y') }}</strong> (masuk pukul <strong>{{ substr($activeAbsensi->jam_masuk, 0, 5) }} WIB</strong>).
+                        Silakan klik <strong>Catat Absen Pulang</strong> di sebelah kanan untuk menutup tugas jaga malam Anda.
+                    </p>
+                </div>
+            </div>
+            <span class="hidden sm:inline-block bg-indigo-600 text-white font-semibold px-2.5 py-1 rounded text-[11px] whitespace-nowrap shadow-sm">
+                Shift Malam
+            </span>
+        </div>
+    @endif
+
+    {{-- Khusus Satpam: Status Libur (Off Duty) --}}
+    @if($pegawai->isSatpam() && $isTodayLibur)
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl">🌴</span>
+                <div>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-200 text-amber-900 uppercase tracking-wide">Satpam Off Duty</span>
+                    <h3 class="font-bold text-slate-800 text-sm mt-0.5">Hari Ini Tercatat Libur (Lepas Dinas)</h3>
+                    <p class="text-xs text-slate-600">Status presensi Anda hari ini adalah Libur dan tidak dihitung alpa. Selamat beristirahat!</p>
+                </div>
+            </div>
+            <form method="POST" action="{{ route('absen.batal-libur') }}" onsubmit="return confirm('Batalkan status libur dan aktifkan tombol absen masuk?')">
+                @csrf
+                <button type="submit" class="px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg transition shadow-xs whitespace-nowrap">
+                    Batalkan Libur (Ganti Dinas)
+                </button>
+            </form>
+        </div>
+    @elseif($pegawai->isSatpam() && (!$todayAbsensi || !$todayAbsensi->jam_masuk) && !$isOvernightShift)
+        {{-- Khusus Satpam: Tombol Lapor Libur Mandiri --}}
+        <div class="bg-gradient-to-r from-slate-50 to-amber-50/50 border border-amber-200 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+            <div class="flex items-center gap-2.5">
+                <span class="text-2xl">🛡️</span>
+                <div>
+                    <p class="text-xs font-bold text-slate-800">Giliran Libur / Lepas Dinas Hari Ini?</p>
+                    <p class="text-[11px] text-slate-500">Khusus Satpam: Jika hari ini Anda jadwal libur (off), klik tombol di samping agar tercatat resmi dan tidak dihitung alpa.</p>
+                </div>
+            </div>
+            <form method="POST" action="{{ route('absen.libur') }}" onsubmit="return confirm('Konfirmasi hari ini Anda libur (off duty)? Status libur akan tercatat resmi dan tidak dihitung alpa.')">
+                @csrf
+                <button type="submit" id="btn-absen-libur" class="w-full sm:w-auto px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg transition shadow-xs flex items-center justify-center gap-1.5 whitespace-nowrap">
+                    <span>🏖️</span>
+                    <span>Absen Hari Ini Libur</span>
+                </button>
+            </form>
+        </div>
+    @endif
+
+    {{-- Grid Absen Masuk & Absen Pulang --}}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="attendance-section">
 
         {{-- Absen Masuk --}}
         <div class="bg-white border border-slate-200 rounded-lg p-5">
             <div class="flex items-center justify-between mb-3">
                 <h2 class="text-sm font-bold text-slate-800">Absen Masuk</h2>
-                @if($todayAbsensi && $todayAbsensi->jam_masuk)
+                @if($isOvernightShift && $activeAbsensi)
+                    <span class="text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded">
+                        Shift Malam: {{ substr($activeAbsensi->jam_masuk, 0, 5) }} WIB
+                    </span>
+                @elseif($isTodayLibur)
+                    <span class="text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
+                        Libur (Off Duty)
+                    </span>
+                @elseif($todayAbsensi && $todayAbsensi->jam_masuk)
                     <span class="text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded">
                         {{ substr($todayAbsensi->jam_masuk, 0, 5) }} WIB
                     </span>
                 @endif
             </div>
 
-            @if($todayAbsensi && $todayAbsensi->jam_masuk)
+            @if($isOvernightShift && $activeAbsensi)
+                <p class="text-xs text-indigo-700">
+                    Masuk dinas kemarin pukul <strong>{{ substr($activeAbsensi->jam_masuk, 0, 5) }} WIB</strong>.
+                    Shift malam masih berjalan. Lakukan absen pulang terlebih dahulu sebelum memulai shift berikutnya.
+                </p>
+                @if($activeAbsensi->lokasi_masuk)
+                    <p class="text-[11px] text-slate-400 mt-1">Lokasi masuk: {{ $activeAbsensi->lokasi_masuk }}</p>
+                @endif
+            @elseif($isTodayLibur)
+                <p class="text-xs text-amber-800 font-semibold">
+                    Hari ini Anda tercatat Libur (Off Duty). Tombol absen masuk dinonaktifkan.
+                </p>
+            @elseif($todayAbsensi && $todayAbsensi->jam_masuk)
                 @php $menitTerlambat = $todayAbsensi->getMenitTerlambat(); @endphp
                 <p class="text-xs text-slate-500">
                     Sudah tercatat pukul {{ substr($todayAbsensi->jam_masuk, 0, 5) }} WIB.
@@ -115,7 +193,7 @@
                 @csrf
                 <input type="hidden" name="lokasi" class="user-gps-location">
 
-                @if(!$todayAbsensi || !$todayAbsensi->jam_masuk)
+                @if(!$isOvernightShift && !$isTodayLibur && (!$todayAbsensi || !$todayAbsensi->jam_masuk))
                     <div class="space-y-2 text-xs">
                         <label class="block font-semibold text-slate-600">Mode Presensi:</label>
                         <div class="flex items-center gap-4">
@@ -136,7 +214,15 @@
                     </div>
                 @endif
 
-                @if($todayAbsensi && $todayAbsensi->jam_masuk)
+                @if($isOvernightShift)
+                    <button type="button" disabled class="w-full py-2.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 cursor-default">
+                        Sedang Bertugas (Shift Malam)
+                    </button>
+                @elseif($isTodayLibur)
+                    <button type="button" disabled class="w-full py-2.5 rounded-lg text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 cursor-default">
+                        Hari Ini Libur (Off Duty)
+                    </button>
+                @elseif($todayAbsensi && $todayAbsensi->jam_masuk)
                     <button type="button" disabled class="w-full py-2.5 rounded-lg text-xs font-semibold bg-green-50 text-green-700 border border-green-200 cursor-default">
                         Sudah Absen Masuk ({{ substr($todayAbsensi->jam_masuk, 0, 5) }})
                     </button>
@@ -154,7 +240,11 @@
         <div class="bg-white border border-slate-200 rounded-lg p-5">
             <div class="flex items-center justify-between mb-3">
                 <h2 class="text-sm font-bold text-slate-800">Absen Pulang</h2>
-                @if($todayAbsensi && $todayAbsensi->jam_pulang)
+                @if($isOvernightShift)
+                    <span class="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
+                        Belum Pulang (Jaga Malam)
+                    </span>
+                @elseif($todayAbsensi && $todayAbsensi->jam_pulang)
                     <span class="text-xs font-semibold text-[#000d6b] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">
                         {{ substr($todayAbsensi->jam_pulang, 0, 5) }} WIB
                     </span>
@@ -166,7 +256,9 @@
             </div>
 
             <p class="text-xs text-slate-500">
-                @if($todayAbsensi && $todayAbsensi->jam_pulang)
+                @if($isOvernightShift)
+                    Tugas jaga malam selesai? Klik tombol di bawah untuk mencatat absen pulang hari ini.
+                @elseif($todayAbsensi && $todayAbsensi->jam_pulang)
                     Tercatat pukul {{ substr($todayAbsensi->jam_pulang, 0, 5) }} WIB.
                     @if($todayAbsensi->lokasi_pulang)
                         <br><span class="text-[11px] text-slate-400">Lokasi: {{ $todayAbsensi->lokasi_pulang }}</span>
@@ -182,8 +274,12 @@
                 @csrf
                 <input type="hidden" name="lokasi" class="user-gps-location">
 
-                @if($todayAbsensi && $todayAbsensi->jam_masuk && !$todayAbsensi->jam_pulang)
-                    @if($todayAbsensi->status_presensi === 'dinas_luar')
+                @php
+                    $targetAbsensi = $isOvernightShift ? $activeAbsensi : $todayAbsensi;
+                @endphp
+
+                @if($targetAbsensi && $targetAbsensi->jam_masuk && !$targetAbsensi->jam_pulang)
+                    @if($targetAbsensi->status_presensi === 'dinas_luar')
                         <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1 text-xs">
                             <label class="block font-semibold text-slate-700">Foto Bukti Dinas Luar (Pulang)</label>
                             <input type="file" name="foto_dinas_luar" accept="image/*" class="w-full text-xs text-slate-700 bg-white border border-slate-300 rounded p-1.5">
@@ -191,7 +287,13 @@
                     @endif
                 @endif
 
-                @if($todayAbsensi && $todayAbsensi->jam_pulang)
+                @if($isOvernightShift)
+                    <button type="submit" id="btn-absen-pulang"
+                            {{ $pegawai->hasSignature() ? '' : 'disabled' }}
+                            class="w-full py-2.5 rounded-lg text-xs font-bold transition shadow-sm {{ $pegawai->hasSignature() ? 'bg-indigo-700 hover:bg-indigo-800 text-white' : 'bg-slate-100 text-slate-400 cursor-not-allowed' }}">
+                        Catat Absen Pulang (Selesai Jaga Malam)
+                    </button>
+                @elseif($todayAbsensi && $todayAbsensi->jam_pulang)
                     <button type="button" disabled class="w-full py-2.5 rounded-lg text-xs font-semibold bg-slate-50 text-slate-500 border border-slate-200 cursor-default">
                         Sudah Absen Pulang ({{ substr($todayAbsensi->jam_pulang, 0, 5) }})
                     </button>

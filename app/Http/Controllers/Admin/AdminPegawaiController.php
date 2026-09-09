@@ -112,6 +112,9 @@ class AdminPegawaiController extends Controller
             'no_hp' => ['nullable', 'string', 'max:50'],
             'status_pernikahan' => ['nullable', 'string', 'max:50'],
             'kontak_darurat' => ['nullable', 'string', 'max:255'],
+            'nama_bank' => ['nullable', 'string', 'max:50'],
+            'nomor_rekening' => ['nullable', 'string', 'max:50'],
+            'nama_rekening' => ['nullable', 'string', 'max:150'],
         ]);
 
         $divisiId = $request->divisi_id;
@@ -155,6 +158,9 @@ class AdminPegawaiController extends Controller
             'no_hp' => $request->no_hp,
             'status_pernikahan' => $request->status_pernikahan ?: 'Belum Menikah',
             'kontak_darurat' => $request->kontak_darurat,
+            'nama_bank' => $request->nama_bank,
+            'nomor_rekening' => $request->nomor_rekening,
+            'nama_rekening' => $request->nama_rekening,
         ]);
 
         return redirect()->route('admin.pegawai.index')->with('success', "Pegawai {$request->nama} berhasil ditambahkan.");
@@ -208,6 +214,9 @@ class AdminPegawaiController extends Controller
             'no_hp' => ['nullable', 'string', 'max:50'],
             'status_pernikahan' => ['nullable', 'string', 'max:50'],
             'kontak_darurat' => ['nullable', 'string', 'max:255'],
+            'nama_bank' => ['nullable', 'string', 'max:50'],
+            'nomor_rekening' => ['nullable', 'string', 'max:50'],
+            'nama_rekening' => ['nullable', 'string', 'max:150'],
         ]);
 
         $divisiId = $request->divisi_id;
@@ -242,6 +251,9 @@ class AdminPegawaiController extends Controller
             'no_hp' => $request->no_hp,
             'status_pernikahan' => $request->status_pernikahan ?: 'Belum Menikah',
             'kontak_darurat' => $request->kontak_darurat,
+            'nama_bank' => $request->nama_bank,
+            'nomor_rekening' => $request->nomor_rekening,
+            'nama_rekening' => $request->nama_rekening,
         ];
 
         if ($request->hasFile('foto')) {

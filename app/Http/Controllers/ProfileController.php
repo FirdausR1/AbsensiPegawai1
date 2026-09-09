@@ -41,6 +41,9 @@ class ProfileController extends Controller
             'no_hp'               => ['nullable', 'string', 'max:50'],
             'status_pernikahan'   => ['nullable', 'string', 'max:30'],
             'kontak_darurat'      => ['nullable', 'string', 'max:255'],
+            'nama_bank'           => ['nullable', 'string', 'max:50'],
+            'nomor_rekening'      => ['nullable', 'string', 'max:50'],
+            'nama_rekening'       => ['nullable', 'string', 'max:150'],
         ], [
             'nama.required' => 'Nama lengkap wajib diisi.',
             'email.required' => 'Email wajib diisi.',
@@ -61,6 +64,9 @@ class ProfileController extends Controller
             'no_hp'               => $request->no_hp,
             'status_pernikahan'   => $request->status_pernikahan,
             'kontak_darurat'      => $request->kontak_darurat,
+            'nama_bank'           => $request->nama_bank,
+            'nomor_rekening'      => $request->nomor_rekening,
+            'nama_rekening'       => $request->nama_rekening,
         ];
 
         // Handle foto upload

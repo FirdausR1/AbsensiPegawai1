@@ -142,6 +142,34 @@
                        class="w-full px-3 py-2 rounded-md border border-slate-300 text-sm text-slate-800 focus:ring-1 focus:ring-[#000d6b] focus:border-[#000d6b] outline-none transition"
                        placeholder="Contoh: Budi (Ayah) - 081234567890">
             </div>
+
+            {{-- Informasi Rekening Bank (Payroll) --}}
+            <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-lg space-y-3">
+                <div class="flex items-center gap-2 border-b border-slate-200 pb-1.5">
+                    <span class="text-sm">💳</span>
+                    <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Rekening Bank (Payroll / Gaji)</h3>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Nama Bank</label>
+                        <input type="text" name="nama_bank" value="{{ old('nama_bank', $pegawai->nama_bank) }}"
+                               class="w-full px-3 py-2 rounded-md border border-slate-300 text-sm text-slate-800 focus:ring-1 focus:ring-[#000d6b] focus:border-[#000d6b] outline-none transition"
+                               placeholder="e.g. BCA, Mandiri, BRI, BNI">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Nomor Rekening</label>
+                        <input type="text" name="nomor_rekening" value="{{ old('nomor_rekening', $pegawai->nomor_rekening) }}"
+                               class="w-full px-3 py-2 rounded-md border border-slate-300 text-sm text-slate-800 focus:ring-1 focus:ring-[#000d6b] focus:border-[#000d6b] outline-none transition font-mono"
+                               placeholder="e.g. 5210987654">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Atas Nama Rekening</label>
+                        <input type="text" name="nama_rekening" value="{{ old('nama_rekening', $pegawai->nama_rekening) }}"
+                               class="w-full px-3 py-2 rounded-md border border-slate-300 text-sm text-slate-800 focus:ring-1 focus:ring-[#000d6b] focus:border-[#000d6b] outline-none transition"
+                               placeholder="Nama di buku tabungan">
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="mt-4 flex justify-end">

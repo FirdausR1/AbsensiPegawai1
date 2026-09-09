@@ -58,6 +58,7 @@ class Absensi extends Model
                 return 0;
             }
 
+            $divisi = $pegawai->getDivisi();
             if ($jadwalShift && $jadwalShift->getJamMasukEfektif()) {
                 $targetJamMasuk = $jadwalShift->getJamMasukEfektif();
             } else {

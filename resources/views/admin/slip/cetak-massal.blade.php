@@ -100,6 +100,10 @@
                     <td class="py-1 font-semibold text-slate-600">BPJS Ketenagakerjaan</td>
                     <td class="py-1 text-slate-800">: {{ $pegawai->status_bpjs_ketenagakerjaan ? ($pegawai->no_bpjs_ketenagakerjaan ?: 'Terdaftar (3%)') : 'Tidak Ada' }}</td>
                 </tr>
+                <tr>
+                    <td class="py-1 font-semibold text-slate-600">Rekening Transfer</td>
+                    <td class="py-1 font-bold text-slate-900" colspan="3">: {{ $pegawai->nomor_rekening ? ($pegawai->nama_bank . ' ' . $pegawai->nomor_rekening . ($pegawai->nama_rekening ? ' a.n. ' . $pegawai->nama_rekening : '')) : 'Belum Terdaftar' }}</td>
+                </tr>
             </table>
 
             <!-- ── RINCIAN PENDAPATAN & POTONGAN PLAIN TABLE ────────────────────── -->

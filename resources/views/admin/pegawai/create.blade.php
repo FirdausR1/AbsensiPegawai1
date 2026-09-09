@@ -201,6 +201,32 @@
                 </div>
             </div>
 
+            {{-- Informasi Rekening Bank (Payroll) --}}
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
+                <div class="flex items-center gap-2 border-b border-slate-200 pb-2">
+                    <span class="text-base">💳</span>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700">Informasi Rekening Bank (Payroll)</h3>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label for="nama_bank" class="block font-semibold text-slate-700 mb-1">Nama Bank</label>
+                        <input type="text" name="nama_bank" id="nama_bank" value="{{ old('nama_bank') }}" placeholder="e.g. BCA, Mandiri, BRI, BNI"
+                               class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-sm">
+                    </div>
+                    <div>
+                        <label for="nomor_rekening" class="block font-semibold text-slate-700 mb-1">Nomor Rekening</label>
+                        <input type="text" name="nomor_rekening" id="nomor_rekening" value="{{ old('nomor_rekening') }}" placeholder="e.g. 5210987654"
+                               class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-sm font-mono">
+                    </div>
+                    <div>
+                        <label for="nama_rekening" class="block font-semibold text-slate-700 mb-1">Atas Nama Rekening</label>
+                        <input type="text" name="nama_rekening" id="nama_rekening" value="{{ old('nama_rekening') }}" placeholder="e.g. Sesuai Buku Tabungan"
+                               class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#000d6b] outline-none text-slate-800 text-sm">
+                    </div>
+                </div>
+            </div>
+
             <div>
                 <label for="password" class="block font-semibold text-slate-700 mb-1">
                     Default Initial Password <span class="text-rose-500">*</span>

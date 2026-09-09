@@ -124,6 +124,9 @@
                             <!-- Clock-Out Column -->
                             <td class="py-4 px-5 font-bold text-[#000d6b]">
                                 {{ $item->jam_pulang ? substr($item->jam_pulang, 0, 5) . ' WIB' : '-' }}
+                                @if($item->jam_masuk && $item->jam_pulang && $item->jam_pulang < $item->jam_masuk)
+                                    <span class="inline-block text-[10px] text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded font-semibold ml-1">🌙 +1 Hari</span>
+                                @endif
                             </td>
 
                             <!-- Status Badge Column -->
