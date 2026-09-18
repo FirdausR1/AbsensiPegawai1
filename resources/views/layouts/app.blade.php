@@ -142,9 +142,17 @@
                         Persetujuan Cuti
                     </a>
 
+                    @php
+                        $pendingShiftBadge = \App\Models\JadwalShift::where('status', 'requested')->count();
+                    @endphp
                     <a href="{{ route('admin.jadwal-shift.index') }}"
-                       class="block px-2.5 py-1.5 rounded-md text-[11px] transition {{ request()->routeIs('admin.jadwal-shift.*') ? 'nav-active' : 'nav-item' }}">
-                        Shift Satpam
+                       class="flex items-center justify-between px-2.5 py-1.5 rounded-md text-[11px] transition {{ request()->routeIs('admin.jadwal-shift.*') ? 'nav-active' : 'nav-item' }}">
+                        <span>Kelola Shift & ACC</span>
+                        @if($pendingShiftBadge > 0)
+                            <span class="px-1.5 py-0.5 bg-amber-500 text-white rounded-full text-[9px] font-extrabold animate-pulse">
+                                {{ $pendingShiftBadge }}
+                            </span>
+                        @endif
                     </a>
 
                     <a href="{{ route('admin.tugas-periodik.index') }}"
@@ -199,34 +207,35 @@
             <a href="{{ route('profile.edit') }}" class="block px-3 py-2 rounded-md text-xs nav-item">Data Diri</a>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button type="submit" class="w-full text-left px-3 py-2 rounded-md text-xs text-red-600 hover:bg-red-50 transition">Logout</button>
+                <button type="submit" class="w-full text-left px-3 py-2 rounded-md text-xs text-red-600 hover:bg-red-50 font-medium transition">Keluar</button>
             </form>
         </div>
     </aside>
 
-    {{-- Main --}}
+    {{-- Main Container --}}
     <div class="flex-1 flex flex-col min-w-0">
-        {{-- Top Bar --}}
-        <header class="bg-white border-b border-slate-200 h-14 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-30">
+
+        {{-- Top Header --}}
+        <header class="h-14 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between shrink-0 sticky top-0 z-30">
             <div class="flex items-center gap-3">
-                <button type="button" id="mobile-menu-btn" class="lg:hidden p-1.5 rounded text-slate-500 hover:bg-slate-100">
+                <button type="button" id="mobile-menu-btn" class="lg:hidden p-1.5 text-slate-500 hover:bg-slate-100 rounded-lg">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
                 </button>
-                <span class="text-sm font-bold text-[#000d6b]">ISW Attendance</span>
+                <span class="text-xs text-slate-400 hidden sm:inline">{{ date('l, d F Y') }}</span>
             </div>
 
             @auth
-                <a href="{{ route('profile.edit') }}" class="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-slate-50 transition">
+                <a href="{{ route('profile.edit') }}" class="flex items-center gap-2.5 hover:opacity-80 transition py-1">
                     @if(auth()->user()->hasFoto())
-                        <img src="{{ auth()->user()->getFotoUrl() }}" alt="{{ auth()->user()->nama }}" class="w-7 h-7 rounded-full object-cover border border-slate-200">
+                        <img src="{{ auth()->user()->getFotoUrl() }}" alt="{{ auth()->user()->nama }}" class="w-8 h-8 rounded-full object-cover border border-slate-200">
                     @else
-                        <div class="w-7 h-7 rounded-full bg-[#000d6b] text-white font-semibold flex items-center justify-center text-[10px]">
+                        <div class="w-8 h-8 rounded-full bg-[#000d6b] text-white flex items-center justify-center text-xs font-bold">
                             {{ auth()->user()->getInitials() }}
                         </div>
                     @endif
-                    <div class="hidden sm:block text-left">
+                    <div class="text-left hidden sm:block">
                         <div class="text-xs font-semibold text-slate-700 leading-tight">{{ auth()->user()->nama }}</div>
                         <div class="text-[10px] text-slate-400">{{ auth()->user()->getRoleBadgeText() }}</div>
                     </div>
@@ -235,32 +244,67 @@
         </header>
 
         {{-- Mobile Menu --}}
-        <div id="mobile-menu" class="hidden lg:hidden bg-white border-b border-slate-200 px-4 py-2 space-y-0.5">
+        <div id="mobile-menu" class="hidden lg:hidden bg-white border-b border-slate-200 px-4 py-2 space-y-0.5 max-h-[80vh] overflow-y-auto">
             <a href="{{ route('dashboard') }}" class="block px-3 py-2 rounded text-xs font-medium {{ request()->routeIs('dashboard') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-600' }}">Dashboard</a>
-            <a href="{{ route('absen.riwayat') }}" class="block px-3 py-2 rounded text-xs font-medium {{ request()->routeIs('absen.riwayat') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-600' }}">Riwayat</a>
-            <a href="{{ route('profile.edit') }}" class="block px-3 py-2 rounded text-xs font-medium {{ request()->routeIs('profile.edit') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-600' }}">Profil</a>
-            <a href="{{ route('profile.signature') }}" class="block px-3 py-2 rounded text-xs font-medium {{ request()->routeIs('profile.signature') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-600' }}">Tanda Tangan</a>
-            <a href="{{ route('cuti.index') }}" class="block px-3 py-2 rounded text-xs font-medium {{ request()->routeIs('cuti.*') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-600' }}">Cuti</a>
+            <a href="{{ route('absen.riwayat') }}" class="block px-3 py-2 rounded text-xs font-medium {{ request()->routeIs('absen.riwayat') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-600' }}">Riwayat Absensi</a>
+            <a href="{{ route('profile.edit') }}" class="block px-3 py-2 rounded text-xs font-medium {{ request()->routeIs('profile.edit') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-600' }}">Profil & Biodata</a>
+            <a href="{{ route('profile.signature') }}" class="block px-3 py-2 rounded text-xs font-medium {{ request()->routeIs('profile.signature') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-600' }}">Tanda Tangan Saya</a>
+            <a href="{{ route('cuti.index') }}" class="block px-3 py-2 rounded text-xs font-medium {{ request()->routeIs('cuti.*') && !request()->is('admin/*') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-600' }}">Pengajuan Cuti</a>
             @if(auth()->check() && auth()->user()->isShiftWorker())
-                <a href="{{ route('jadwal-shift.index') }}" class="block px-3 py-2 rounded text-xs font-medium {{ request()->routeIs('jadwal-shift.index') && !request()->is('admin/*') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-600' }}">Jadwal Shift</a>
+                <a href="{{ route('jadwal-shift.index') }}" class="block px-3 py-2 rounded text-xs font-medium {{ request()->routeIs('jadwal-shift.index') && !request()->is('admin/*') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-600' }}">Jadwal Shift Saya</a>
             @endif
-            <a href="{{ route('export.sendiri') }}" class="block px-3 py-2 rounded text-xs font-medium text-slate-600">Export</a>
+            @if(auth()->check() && (auth()->user()->isCleaningService() || auth()->user()->hasAdminAccess()))
+                <a href="{{ route('tugas-periodik.index') }}" class="block px-3 py-2 rounded text-xs font-medium {{ request()->routeIs('tugas-periodik.index') && !request()->is('admin/*') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-600' }}">Tugas Periodik CS</a>
+            @endif
+            <a href="{{ route('pengumuman.index') }}" class="block px-3 py-2 rounded text-xs font-medium {{ request()->routeIs('pengumuman.index') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-600' }}">Pengumuman & SOP</a>
+            <a href="{{ route('export.sendiri') }}" class="block px-3 py-2 rounded text-xs font-medium text-slate-600">Export Excel Pribadi</a>
+
             @if(auth()->check() && auth()->user()->hasAdminAccess())
-                <div class="pt-2 pb-1 border-t border-slate-100">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3">
-                        {{ auth()->user()->isSuperAdmin() ? 'Admin' : 'Koordinator' }}
+                <div class="pt-2.5 pb-1 border-t border-slate-200 mt-2">
+                    <p class="text-[10px] font-extrabold text-[#000d6b] uppercase tracking-wider px-3 flex items-center justify-between">
+                        <span>{{ auth()->user()->isSuperAdmin() ? 'ADMIN PANEL (SUPERADMIN)' : 'PANEL KOORDINATOR' }}</span>
                     </p>
                 </div>
+
+                {{-- Monitoring --}}
+                <a href="{{ route('admin.index') }}" class="block px-3 py-1.5 rounded text-xs font-medium {{ request()->routeIs('admin.index') || request()->routeIs('admin.dashboard') ? 'bg-[#eef2ff] text-[#000d6b] font-bold' : 'text-slate-600' }}">Monitor Executive</a>
+                <a href="{{ route('admin.rekap.index') }}" class="block px-3 py-1.5 rounded text-xs font-medium {{ request()->routeIs('admin.rekap.*') ? 'bg-[#eef2ff] text-[#000d6b] font-bold' : 'text-slate-600' }}">Rekap Presensi Pegawai</a>
+                <a href="{{ route('admin.absensi.index') }}" class="block px-3 py-1.5 rounded text-xs font-medium {{ request()->routeIs('admin.absensi.*') ? 'bg-[#eef2ff] text-[#000d6b] font-bold' : 'text-slate-600' }}">Data & Edit Absensi</a>
+
+                {{-- Operasional & Persetujuan --}}
+                <a href="{{ route('admin.cuti.index') }}" class="block px-3 py-1.5 rounded text-xs font-medium {{ request()->routeIs('admin.cuti.*') ? 'bg-[#eef2ff] text-[#000d6b] font-bold' : 'text-slate-600' }}">Persetujuan Cuti</a>
+
+                <a href="{{ route('admin.jadwal-shift.index') }}" class="flex items-center justify-between px-3 py-1.5 rounded text-xs font-medium {{ request()->routeIs('admin.jadwal-shift.*') ? 'bg-[#eef2ff] text-[#000d6b] font-bold' : 'text-slate-600' }}">
+                    <span>Kelola Shift & ACC Permohonan</span>
+                    @if(isset($pendingShiftBadge) && $pendingShiftBadge > 0)
+                        <span class="px-1.5 py-0.5 bg-amber-500 text-white rounded-full text-[9px] font-extrabold">
+                            {{ $pendingShiftBadge }}
+                        </span>
+                    @endif
+                </a>
+
+                <a href="{{ route('admin.tugas-periodik.index') }}" class="block px-3 py-1.5 rounded text-xs font-medium {{ request()->routeIs('admin.tugas-periodik.*') ? 'bg-[#eef2ff] text-[#000d6b] font-bold' : 'text-slate-600' }}">Review Foto Cleaning Service</a>
+                <a href="{{ route('admin.sp.index') }}" class="block px-3 py-1.5 rounded text-xs font-medium {{ request()->routeIs('admin.sp.*') ? 'bg-[#eef2ff] text-[#000d6b] font-bold' : 'text-slate-600' }}">Sanksi & Surat Peringatan (SP)</a>
+                <a href="{{ route('admin.evaluasi-kinerja.index') }}" class="block px-3 py-1.5 rounded text-xs font-medium {{ request()->routeIs('admin.evaluasi-kinerja.*') ? 'bg-[#eef2ff] text-[#000d6b] font-bold' : 'text-slate-600' }}">Evaluasi Kinerja Periodik</a>
+                <a href="{{ route('admin.slip.index') }}" class="block px-3 py-1.5 rounded text-xs font-medium {{ request()->routeIs('admin.slip.*') ? 'bg-[#eef2ff] text-[#000d6b] font-bold' : 'text-slate-600' }}">Slip Gaji & BPJS Payroll</a>
+                <a href="{{ route('admin.kantor-klien.index') }}" class="block px-3 py-1.5 rounded text-xs font-medium {{ request()->routeIs('admin.kantor-klien.*') ? 'bg-[#eef2ff] text-[#000d6b] font-bold' : 'text-slate-600' }}">Master Kantor Klien</a>
+                <a href="{{ route('admin.divisi.index') }}" class="block px-3 py-1.5 rounded text-xs font-medium {{ request()->routeIs('admin.divisi.*') ? 'bg-[#eef2ff] text-[#000d6b] font-bold' : 'text-slate-600' }}">Shift & Jadwal Jam Kerja</a>
+
+                {{-- Khusus Superadmin --}}
                 @if(auth()->user()->isSuperAdmin())
-                    <a href="{{ route('admin.pegawai.index') }}" class="block px-3 py-2 rounded text-xs font-medium {{ request()->routeIs('admin.pegawai.*') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-600' }}">Kelola Pegawai</a>
+                    <div class="pt-2 pb-0.5 px-3">
+                        <span class="text-[9px] font-bold text-indigo-600 uppercase tracking-wider">Khusus Superadmin:</span>
+                    </div>
+                    <a href="{{ route('admin.pegawai.index') }}" class="block px-3 py-1.5 rounded text-xs font-medium {{ request()->routeIs('admin.pegawai.*') ? 'bg-[#eef2ff] text-[#000d6b] font-bold' : 'text-slate-600' }}">Kelola Master Pegawai</a>
+                    <a href="{{ route('admin.pegawai.cetak-data-all') }}" target="_blank" class="block px-3 py-1.5 rounded text-xs font-medium text-slate-600">Cetak Seluruh Data Pegawai</a>
+                    <a href="{{ route('admin.kepala.index') }}" class="block px-3 py-1.5 rounded text-xs font-medium {{ request()->routeIs('admin.kepala.*') ? 'bg-[#eef2ff] text-[#000d6b] font-bold' : 'text-slate-600' }}">TTD & QR Code Kepala ISW</a>
+                    <a href="{{ route('admin.mou.index') }}" class="block px-3 py-1.5 rounded text-xs font-medium {{ request()->routeIs('admin.mou.*') ? 'bg-[#eef2ff] text-[#000d6b] font-bold' : 'text-slate-600' }}">MoU & Kontrak Outsourcing</a>
                 @endif
-                <a href="{{ route('admin.absensi.index') }}" class="block px-3 py-2 rounded text-xs font-medium {{ request()->routeIs('admin.absensi.*') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-600' }}">Data Absensi</a>
-                <a href="{{ route('admin.cuti.index') }}" class="block px-3 py-2 rounded text-xs font-medium {{ request()->routeIs('admin.cuti.*') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-600' }}">Persetujuan Cuti</a>
-                <a href="{{ route('admin.divisi.index') }}" class="block px-3 py-2 rounded text-xs font-medium {{ request()->routeIs('admin.divisi.*') ? 'bg-[#eef2ff] text-[#000d6b]' : 'text-slate-600' }}">Shift & Waktu Kerja</a>
             @endif
-            <form method="POST" action="{{ route('logout') }}" class="pt-2 border-t border-slate-100">
+
+            <form method="POST" action="{{ route('logout') }}" class="pt-2 border-t border-slate-100 mt-2">
                 @csrf
-                <button type="submit" class="w-full text-left px-3 py-2 text-xs font-medium text-red-600">Logout</button>
+                <button type="submit" class="w-full text-left px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 rounded">Logout</button>
             </form>
         </div>
 
@@ -301,6 +345,29 @@
                 if (arrow) arrow.classList.toggle('rotate-180');
             }
         }
+
+        // Heartbeat Keep-Alive & Auto-refresh CSRF Token (Pencegahan 419 Page Expired)
+        function pingSessionKeepAlive() {
+            fetch('{{ route('ping.session') }}', { credentials: 'same-origin' })
+                .then(res => {
+                    if (res.status === 401 || res.status === 419) {
+                        return null;
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    if (data && data.csrf_token) {
+                        document.querySelectorAll('input[name="_token"]').forEach(el => el.value = data.csrf_token);
+                    }
+                })
+                .catch(() => {});
+        }
+
+        // Ping otomatis setiap 10 menit
+        setInterval(pingSessionKeepAlive, 10 * 60 * 1000);
+
+        // Ping saat user kembali ke tab setelah layar HP/laptop menyala
+        window.addEventListener('focus', pingSessionKeepAlive);
     </script>
 </body>
 </html>

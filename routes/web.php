@@ -22,6 +22,15 @@ Route::middleware('guest')->group(function () {
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
 Route::middleware('auth')->group(function () {
+    // Heartbeat Keep-Alive & Refresh CSRF Token
+    Route::get('/ping-session', function () {
+        return response()->json([
+            'status'     => 'alive',
+            'user_id'    => auth()->id(),
+            'csrf_token' => csrf_token(),
+        ]);
+    })->name('ping.session');
+
     Route::get('/dashboard', [AbsensiController::class, 'dashboard'])->name('dashboard');
     Route::get('/riwayat', [AbsensiController::class, 'riwayat'])->name('absen.riwayat');
 

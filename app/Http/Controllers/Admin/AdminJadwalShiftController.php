@@ -25,17 +25,34 @@ class AdminJadwalShiftController extends Controller
             ->orderBy('area_kerja')
             ->orderBy('nama');
 
-        // Supervisor / Admin Divisi hanya bisa melihat & mengatur shift pegawai di Kantor Klien-nya sendiri
+        // Supervisor / Admin Divisi hanya bisa melihat & mengatur shift pegawai di Kantor Klien-nya sendiri / divisinya
         if ($currentUser->isDivisionAdmin()) {
-            $area = $currentUser->area_kerja;
-            $divisiId = $currentUser->divisi_id;
+            $myArea = strtolower(trim($currentUser->area_kerja ?? ''));
+            $myDivisiId = $currentUser->divisi_id;
+            $myKeyword = strtolower(trim(($currentUser->area_kerja ?? '') . ' ' . ($currentUser->nama ?? '') . ' ' . ($currentUser->divisi?->nama ?? '')));
 
-            $pegawaiQuery->where(function ($q) use ($area, $divisiId) {
-                if ($area) {
-                    $q->where('area_kerja', 'like', "%{$area}%");
-                } elseif ($divisiId) {
-                    $q->where('divisi_id', $divisiId);
+            $pegawaiQuery->where(function ($q) use ($myArea, $myDivisiId, $myKeyword) {
+                if ($myDivisiId) {
+                    $q->where('divisi_id', $myDivisiId);
                 }
+                if ($myArea) {
+                    $q->orWhere('area_kerja', 'like', "%{$myArea}%");
+                }
+                if (str_contains($myKeyword, 'satpam') || str_contains($myKeyword, 'danru') || str_contains($myKeyword, 'security')) {
+                    $q->orWhereHas('divisi', function ($sub) {
+                        $sub->where('nama', 'like', '%satpam%')->orWhere('nama', 'like', '%security%');
+                    })->orWhere('area_kerja', 'like', '%satpam%');
+                }
+                if (str_contains($myKeyword, 'clean')) {
+                    $q->orWhereHas('divisi', function ($sub) {
+                        $sub->where('nama', 'like', '%cleaning%');
+                    })->orWhere('area_kerja', 'like', '%cleaning%');
+                }
+                // Koordinator / Danru Lapangan bisa mengelola seluruh pekerja divisi shift
+                $q->orWhereHas('divisi', function ($sub) {
+                    $sub->whereIn('hari_kerja_tipe', ['7_hari', '6_hari'])
+                        ->orWhere('nama', 'like', '%shift%');
+                });
             });
         }
 
@@ -80,11 +97,33 @@ class AdminJadwalShiftController extends Controller
 
         if ($currentUser->isDivisionAdmin()) {
             $pendingQuery->whereHas('pegawai', function ($q) use ($currentUser) {
-                if ($currentUser->area_kerja) {
-                    $q->where('area_kerja', 'like', "%{$currentUser->area_kerja}%");
-                } elseif ($currentUser->divisi_id) {
-                    $q->where('divisi_id', $currentUser->divisi_id);
-                }
+                $myArea = strtolower(trim($currentUser->area_kerja ?? ''));
+                $myDivisiId = $currentUser->divisi_id;
+                $myKeyword = strtolower(trim(($currentUser->area_kerja ?? '') . ' ' . ($currentUser->nama ?? '') . ' ' . ($currentUser->divisi?->nama ?? '')));
+
+                $q->where(function ($sq) use ($myArea, $myDivisiId, $myKeyword) {
+                    if ($myDivisiId) {
+                        $sq->where('divisi_id', $myDivisiId);
+                    }
+                    if ($myArea) {
+                        $sq->orWhere('area_kerja', 'like', "%{$myArea}%");
+                    }
+                    if (str_contains($myKeyword, 'satpam') || str_contains($myKeyword, 'danru') || str_contains($myKeyword, 'security')) {
+                        $sq->orWhereHas('divisi', function ($sub) {
+                            $sub->where('nama', 'like', '%satpam%')->orWhere('nama', 'like', '%security%');
+                        })->orWhere('area_kerja', 'like', '%satpam%');
+                    }
+                    if (str_contains($myKeyword, 'clean')) {
+                        $sq->orWhereHas('divisi', function ($sub) {
+                            $sub->where('nama', 'like', '%cleaning%');
+                        })->orWhere('area_kerja', 'like', '%cleaning%');
+                    }
+                    // Koordinator / Danru Lapangan bisa melihat dan meng-ACC seluruh permohonan pekerja shift
+                    $sq->orWhereHas('divisi', function ($sub) {
+                        $sub->whereIn('hari_kerja_tipe', ['7_hari', '6_hari'])
+                            ->orWhere('nama', 'like', '%shift%');
+                    });
+                });
             });
         }
         $pendingRequests = $pendingQuery->get();
@@ -108,13 +147,8 @@ class AdminJadwalShiftController extends Controller
         $currentUser = Auth::user();
         $targetPegawai = Pegawai::with('divisi')->find($request->pegawai_id);
 
-        if ($currentUser->isDivisionAdmin()) {
-            if ($currentUser->area_kerja && strtolower($targetPegawai->area_kerja) !== strtolower($currentUser->area_kerja)) {
-                return response()->json(['error' => 'Akses ditolak. Anda hanya dapat mengelola shift pegawai di Kantor Klien Anda.'], 403);
-            }
-            if ($currentUser->divisi_id && $targetPegawai->divisi_id !== $currentUser->divisi_id && !$currentUser->area_kerja) {
-                return response()->json(['error' => 'Akses ditolak. Pegawai bukan bagian dari divisi Anda.'], 403);
-            }
+        if ($currentUser->isDivisionAdmin() && !$currentUser->canManagePegawai($targetPegawai)) {
+            return response()->json(['error' => 'Akses ditolak. Anda hanya dapat mengelola shift pegawai di divisi/area Anda.'], 403);
         }
 
         // Default jam jika tidak diisi
@@ -151,13 +185,8 @@ class AdminJadwalShiftController extends Controller
         $currentUser = Auth::user();
         $targetPegawai = Pegawai::with('divisi')->find($request->pegawai_id);
 
-        if ($currentUser->isDivisionAdmin()) {
-            if ($currentUser->area_kerja && strtolower($targetPegawai->area_kerja) !== strtolower($currentUser->area_kerja)) {
-                return back()->with('error', 'Akses ditolak. Anda hanya dapat mengelola shift pegawai di Kantor Klien Anda.');
-            }
-            if ($currentUser->divisi_id && $targetPegawai->divisi_id !== $currentUser->divisi_id && !$currentUser->area_kerja) {
-                return back()->with('error', 'Akses ditolak. Pegawai bukan bagian dari divisi Anda.');
-            }
+        if ($currentUser->isDivisionAdmin() && !$currentUser->canManagePegawai($targetPegawai)) {
+            return back()->with('error', 'Akses ditolak. Anda hanya dapat mengelola shift pegawai di divisi/area Anda.');
         }
 
         $jam = JadwalShift::defaultJam($request->tipe_shift, $targetPegawai);
@@ -202,10 +231,8 @@ class AdminJadwalShiftController extends Controller
         $currentUser = Auth::user();
         $targetPegawai = Pegawai::find($request->pegawai_id);
 
-        if ($currentUser->isDivisionAdmin()) {
-            if ($currentUser->area_kerja && strtolower($targetPegawai->area_kerja) !== strtolower($currentUser->area_kerja)) {
-                return response()->json(['error' => 'Akses ditolak.'], 403);
-            }
+        if ($currentUser->isDivisionAdmin() && !$currentUser->canManagePegawai($targetPegawai)) {
+            return response()->json(['error' => 'Akses ditolak.'], 403);
         }
 
         JadwalShift::where('pegawai_id', $request->pegawai_id)
@@ -218,22 +245,34 @@ class AdminJadwalShiftController extends Controller
     public function approve(JadwalShift $jadwalShift)
     {
         $currentUser = Auth::user();
-        if ($currentUser->isDivisionAdmin() && $currentUser->area_kerja && strtolower($jadwalShift->pegawai->area_kerja) !== strtolower($currentUser->area_kerja)) {
-            return back()->with('error', 'Akses ditolak.');
+        if (!$currentUser->hasAdminAccess()) {
+            return back()->with('error', 'Akses ditolak. Anda tidak memiliki hak akses admin.');
+        }
+
+        if ($currentUser->isDivisionAdmin() && !$currentUser->canManagePegawai($jadwalShift->pegawai)) {
+            return back()->with('error', 'Akses ditolak. Anda hanya dapat menyetujui shift anggota divisi/area Anda.');
         }
 
         $jadwalShift->update(['status' => 'confirmed']);
-        return back()->with('success', 'Pengajuan jadwal shift disetujui.');
+        $namaPegawai = $jadwalShift->pegawai->nama;
+        $tanggal = $jadwalShift->tanggal->translatedFormat('d F Y');
+        return back()->with('success', "Pengajuan jadwal shift untuk {$namaPegawai} ({$jadwalShift->tipe_shift}) pada tanggal {$tanggal} berhasil disetujui (ACC).");
     }
 
     public function reject(JadwalShift $jadwalShift)
     {
         $currentUser = Auth::user();
-        if ($currentUser->isDivisionAdmin() && $currentUser->area_kerja && strtolower($jadwalShift->pegawai->area_kerja) !== strtolower($currentUser->area_kerja)) {
-            return back()->with('error', 'Akses ditolak.');
+        if (!$currentUser->hasAdminAccess()) {
+            return back()->with('error', 'Akses ditolak. Anda tidak memiliki hak akses admin.');
         }
 
+        if ($currentUser->isDivisionAdmin() && !$currentUser->canManagePegawai($jadwalShift->pegawai)) {
+            return back()->with('error', 'Akses ditolak. Anda hanya dapat menolak shift anggota divisi/area Anda.');
+        }
+
+        $namaPegawai = $jadwalShift->pegawai->nama;
+        $tanggal = $jadwalShift->tanggal->translatedFormat('d F Y');
         $jadwalShift->delete();
-        return back()->with('success', 'Pengajuan jadwal shift ditolak.');
+        return back()->with('success', "Pengajuan jadwal shift {$namaPegawai} pada tanggal {$tanggal} telah ditolak.");
     }
 }

@@ -96,17 +96,77 @@ class Pegawai extends Authenticatable
 
     public function isSuperAdmin(): bool
     {
-        return $this->role === 'super_admin' || ($this->is_admin && empty($this->role));
+        $role = strtolower(trim((string) ($this->role ?? '')));
+        if (in_array($role, ['super_admin', 'superadmin', 'admin', 'administrator', 'super admin', 'kepala_isw'])) {
+            return true;
+        }
+        return (bool) $this->is_admin && (empty($role) || $role === 'staff' || !str_contains($role, 'divisi'));
     }
 
     public function isDivisionAdmin(): bool
     {
-        return $this->role === 'admin_divisi';
+        if ($this->isSuperAdmin()) {
+            return false;
+        }
+        $role = strtolower(trim((string) ($this->role ?? '')));
+        return $role === 'admin_divisi' || str_contains($role, 'koordinator') || str_contains($role, 'danru') || str_contains($role, 'supervisor');
     }
 
     public function hasAdminAccess(): bool
     {
         return $this->isSuperAdmin() || $this->isDivisionAdmin() || (bool) $this->is_admin;
+    }
+
+    public function canManagePegawai(Pegawai $target): bool
+    {
+        // Superadmin memiliki wewenang penuh atas seluruh pegawai di semua site
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        if (!$this->hasAdminAccess()) {
+            return false;
+        }
+
+        // Jika user adalah Admin Divisi / Danru / Koordinator
+        if ($this->isDivisionAdmin()) {
+            // Jika ada divisi_id yang sama
+            if ($this->divisi_id && $target->divisi_id && (int) $this->divisi_id === (int) $target->divisi_id) {
+                return true;
+            }
+
+            // Jika area kerja sama persis atau saling mencakup
+            if ($this->area_kerja && $target->area_kerja) {
+                $myArea = strtolower(trim($this->area_kerja));
+                $targetArea = strtolower(trim($target->area_kerja));
+                if (str_contains($myArea, $targetArea) || str_contains($targetArea, $myArea)) {
+                    return true;
+                }
+            }
+
+            // Danru / Koordinator Satpam berhak mengelola seluruh satpam / security di semua lokasi klien
+            $adminKeyword = strtolower(trim(($this->area_kerja ?? '') . ' ' . ($this->nama ?? '') . ' ' . ($this->divisi?->nama ?? '')));
+            if ((str_contains($adminKeyword, 'satpam') || str_contains($adminKeyword, 'security') || str_contains($adminKeyword, 'danru')) && $target->isSatpam()) {
+                return true;
+            }
+
+            // Supervisor / Koordinator Cleaning Service berhak mengelola seluruh CS
+            if (str_contains($adminKeyword, 'clean') && $target->isCleaningService()) {
+                return true;
+            }
+
+            // Jika admin adalah Koordinator / Danru Lapangan, izinkan mengelola seluruh pekerja shift lapangan
+            if ($target->isShiftWorker()) {
+                return true;
+            }
+
+            // Jika target belum diset area_kerja atau divisinya
+            if (empty($target->area_kerja) && empty($target->divisi_id)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function getRoleBadgeText(): string

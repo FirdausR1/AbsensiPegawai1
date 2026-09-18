@@ -12,8 +12,8 @@
                 <span>/</span>
                 <span class="text-slate-800 font-bold">Jadwal Shift</span>
             </div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-[#000d6b] tracking-tight">Kelola Jadwal Shift Per Divisi</h1>
-            <p class="text-xs text-slate-500 mt-1">Atur jadwal shift sesuai divisi/departemen (Satpam, Cleaning Service, Operasional, Staff). Klik sel kalender untuk set shift.</p>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-[#000d6b] tracking-tight">Kelola Jadwal Shift & Persetujuan (ACC)</h1>
+            <p class="text-xs text-slate-500 mt-1">Atur jadwal shift dan berikan persetujuan (ACC) permohonan perubahan / penukaran shift dari staf Satpam & Cleaning Service.</p>
         </div>
 
         <!-- Month Nav -->
